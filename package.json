@@ -44,7 +44,7 @@
   },
   "koishi": {
     "description": {
-      "zh": "用大语言模型给定资料进行知识问答",
+      "zh": "用大语言模型给定资料进行知识问答"
     },
     "service": {
       "required": [
