@@ -1,0 +1,8 @@
+name: 'empty'
+
+messages:
+    - role: user
+      content: |
+          {knowledge}
+
+          {input}

@@ -1,0 +1,16 @@
+name: 'default'
+messages:
+    - role: user
+      content: |
+          这是一些相关资料，接下来请你阅读下面的资料，用简洁直白的回复回答我的问题。
+
+          资料：
+          {knowledge}
+
+          问题：
+          {input}
+
+query:
+    - '出生东西.pdf'
+    - '出生东西.doc'
+    - include: 'abc'
