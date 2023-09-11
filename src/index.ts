@@ -28,13 +28,25 @@ export const name = '@dingyi222666/chathub-knowledge-chat'
 
 export interface Config extends ChatHubPlugin.Config {
     defaultConfig: string
+    chunkSize: number
+    chunkOverlap: number
 }
 
 export const Config = Schema.intersect([
     Schema.object({
         defaultConfig: Schema.dynamic('knowledge-config')
             .default('default')
-            .description('默认的知识库配置文件')
+            .description('默认的知识库配置文件'),
+        chunkSize: Schema.number()
+            .default(500)
+            .max(200)
+            .min(2000)
+            .description('文本块的切割大小（字符）'),
+        chunkOverlap: Schema.number()
+            .default(0)
+            .max(200)
+            .min(0)
+            .description('文本块之间的最大重叠量（字体）。保留一些重叠可以保持文本块之间的连续性。')
     }).description('基础配置')
 ])
 

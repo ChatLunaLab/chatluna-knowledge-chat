@@ -10,7 +10,4 @@ messages:
           问题：
           {input}
 
-query:
-    - '出生东西.pdf'
-    - '出生东西.doc'
-    - include: 'abc'
+mode: 'chat'

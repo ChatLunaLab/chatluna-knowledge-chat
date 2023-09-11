@@ -6,3 +6,5 @@ messages:
           {knowledge}
 
           {input}
+
+mode: 'qa'
