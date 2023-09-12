@@ -5,6 +5,7 @@ import fs from 'fs/promises'
 import { load } from 'js-yaml'
 import { RawKnowledgeConfig } from '../types'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+import { VectorStore } from 'langchain/vectorstores/base'
 
 const logger = createLogger('chathub-knowledge-chat')
 
@@ -18,6 +19,7 @@ export class KnowledgeConfigService {
 
         const presetDir = this.resolveConfigDir()
         const files = await fs.readdir(presetDir)
+        const dataDir = path.resolve(this.ctx.baseDir, 'data/chathub/knowledge/data')
 
         this._knowledgeConfig.length = 0
 
@@ -26,8 +28,21 @@ export class KnowledgeConfigService {
 
             const rawText = await fs.readFile(path.join(presetDir, file), 'utf-8')
             const preset = loadKnowledgeConfig(rawText)
+            preset.path = path.join(presetDir, file)
 
             this._knowledgeConfig.push(preset)
+        }
+
+        for (const configKey in this._knowledgeConfig) {
+            const query = this._knowledgeConfig[configKey].query
+
+            if (query == null) {
+                this._knowledgeConfig[configKey].query = await this._asQuery(dataDir)
+
+                continue
+            }
+
+            this._knowledgeConfig[configKey].query = await this._parseQuery(query, dataDir, 0)
         }
 
         this.ctx.schema.set(
@@ -85,6 +100,53 @@ export class KnowledgeConfigService {
         }
     }
 
+    private async _asQuery(dir: string) {
+        const files = await fs.readdir(dir)
+
+        return files.map((file) => path.join(dir, file))
+    }
+
+    private async _parseQuery(
+        query: (string | { include: string })[],
+        dataDir: string,
+        level: number
+    ) {
+        if (level > 10) {
+            throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_LOOP_INCLUDE)
+        }
+
+        const result: (string | { include: string })[] = []
+
+        for (const item of query) {
+            if (typeof item === 'string') {
+                result.push(await this._loadDocPath(dataDir, item))
+            } else {
+                const config = await this.getConfig(item.include, false, true)
+                const sub = await this._parseQuery(config.query, dataDir, level + 1)
+
+                result.push(...sub)
+            }
+        }
+
+        return result
+    }
+
+    private async _loadDocPath(dir: string, name: string) {
+        let fileStat = await fs.stat(path.join(dir, name))
+
+        if (fileStat.isFile()) {
+            return path.join(dir, name)
+        }
+
+        fileStat = await fs.stat(name)
+
+        if (fileStat.isFile()) {
+            return name
+        }
+
+        throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_DOC_NOT_FOUND)
+    }
+
     private async _copyDefaultConfig() {
         const currentPresetDir = path.join(this.resolveConfigDir())
 
@@ -102,6 +164,33 @@ export class KnowledgeConfigService {
             }
         }
     }
+}
+
+export class KnowledgeService {
+    private readonly _vectorStores: Record<string, VectorStore> = {}
+
+    constructor(
+        private readonly ctx: Context,
+        private readonly configService: KnowledgeConfigService
+    ) {
+        defineDatabase(ctx)
+    }
+}
+
+function defineDatabase(ctx: Context) {
+    ctx.database.extend(
+        'chathub_knowledge',
+        {
+            path: { type: 'string', length: 254 },
+            id: { type: 'string', length: 254 },
+            vector_storage: { type: 'string', length: 254 },
+            embeddings: { type: 'string', length: 254 }
+        },
+        {
+            autoInc: false,
+            primary: ['path']
+        }
+    )
 }
 
 export function loadKnowledgeConfig(text: string) {
