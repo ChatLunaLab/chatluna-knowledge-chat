@@ -52,10 +52,7 @@ export const Config = Schema.intersect([
             ),
         mode: Schema.union([
             Schema.const('default').description('直接对问题查询'),
-            Schema.const('regenerate').description('重新生成问题查询'),
-            Schema.const('regenerate-and-query').description(
-                '重新生成问题, 并使用 LLM 附加查询文档'
-            )
+            Schema.const('regenerate').description('重新生成问题查询')
         ]).description('知识库运行模式')
     }).description('基础配置')
 ])
