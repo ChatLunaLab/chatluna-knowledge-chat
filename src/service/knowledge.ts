@@ -6,6 +6,7 @@ import { load } from 'js-yaml'
 import { RawKnowledgeConfig } from '../types'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
+import { Embeddings } from 'langchain/embeddings/base'
 
 const logger = createLogger('chathub-knowledge-chat')
 
@@ -167,13 +168,48 @@ export class KnowledgeConfigService {
 }
 
 export class KnowledgeService {
-    private readonly _vectorStores: Record<string, VectorStore> = {}
+    private _vectorStores: Record<string, VectorStore> = {}
 
     constructor(
         private readonly ctx: Context,
         private readonly configService: KnowledgeConfigService
     ) {
         defineDatabase(ctx)
+
+        ctx.on('dispose', async () => {
+            this._vectorStores = {}
+        })
+    }
+
+    public async loadVectorStore(name: string, embeddings: Embeddings) {
+        if (this._vectorStores[name]) {
+            return this._vectorStores[name]
+        }
+
+        const rawConfig = await this.configService.getConfig(name)
+
+        const config = (
+            await this.ctx.database.get('chathub_knowledge', {
+                path: rawConfig.path
+            })
+        )?.[0]
+
+        if (!config) {
+            throw new ChatHubError(
+                ChatHubErrorCode.KNOWLEDGE_CONFIG_INVALID,
+                new Error(`Knowledge vector store ${name} not found`)
+            )
+        }
+
+        const vectorStore = await this.ctx.chathub.platform.createVectorStore(
+            config.vector_storage,
+            {
+                key: config.id,
+                embeddings
+            }
+        )
+
+        return vectorStore
     }
 }
 

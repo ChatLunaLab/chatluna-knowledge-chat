@@ -16,7 +16,7 @@ export function apply(ctx: Context, config: Config) {
 
         await knowledgeConfigService.loadAllConfig()
 
-        await plugins(ctx, config)
+        await plugins(ctx, plugin, config)
     })
 
     ctx.on('dispose', async () => {
@@ -30,6 +30,7 @@ export interface Config extends ChatHubPlugin.Config {
     defaultConfig: string
     chunkSize: number
     chunkOverlap: number
+    mode: string
 }
 
 export const Config = Schema.intersect([
@@ -46,7 +47,16 @@ export const Config = Schema.intersect([
             .default(0)
             .max(200)
             .min(0)
-            .description('文本块之间的最大重叠量（字体）。保留一些重叠可以保持文本块之间的连续性。')
+            .description(
+                '文本块之间的最大重叠量（字体）。保留一些重叠可以保持文本块之间的连续性。'
+            ),
+        mode: Schema.union([
+            Schema.const('default').description('直接对问题查询'),
+            Schema.const('regenerate').description('重新生成问题查询'),
+            Schema.const('regenerate-and-query').description(
+                '重新生成问题, 并使用 LLM 附加查询文档'
+            )
+        ]).description('知识库运行模式')
     }).description('基础配置')
 ])
 
