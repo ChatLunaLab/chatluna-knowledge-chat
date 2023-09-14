@@ -1,4 +1,4 @@
-import { Document } from 'langchain/dist/document'
+import { Document } from 'langchain/document'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
 import { DocxLoader } from 'langchain/document_loaders/fs/docx'
 

@@ -1,14 +1,17 @@
-import { Context, Schema } from 'koishi'
+import { Context, randomId, Schema } from 'koishi'
 import { createLogger } from '@dingyi222666/koishi-plugin-chathub/lib/utils/logger'
+import { parseRawModelName } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/utils/count_tokens'
 import path from 'path'
+import { Document } from 'langchain/document'
 import fs from 'fs/promises'
 import { load } from 'js-yaml'
-import { RawKnowledgeConfig } from '../types'
+import { KnowledgeConfig, RawKnowledgeConfig } from '../types'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { Embeddings } from 'langchain/embeddings/base'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
 import { Config } from '..'
+import { ChatHubSaveableVectorStore } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/model/base'
 
 const logger = createLogger('chathub-knowledge-chat')
 
@@ -216,6 +219,40 @@ export class KnowledgeService {
         )
 
         return vectorStore
+    }
+
+    public async uploadDocument(documents: Document[], path: string) {
+        const existsDocument = await this.ctx.database.get('chathub_knowledge', { path })
+
+        if (existsDocument.length > 0) {
+            return
+        }
+
+        const id = randomId()
+
+        const embeddings = await this.ctx.chathub.createEmbeddings(
+            ...parseRawModelName(this.ctx.chathub.config.defaultEmbeddings)
+        )
+
+        const vectorStore = await this.loadVectorStore(
+            this.ctx.chathub.config.defaultVectorStore,
+            embeddings
+        )
+
+        await vectorStore.addDocuments(documents)
+
+        if (vectorStore instanceof ChatHubSaveableVectorStore) {
+            await vectorStore.save()
+        }
+
+        const config: KnowledgeConfig = {
+            path,
+            id,
+            vector_storage: this.ctx.chathub.config.defaultVectorStore,
+            embeddings: this.ctx.chathub.config.defaultVectorStore
+        }
+
+        this.ctx.database.upsert('chathub_knowledge', [config])
     }
 
     public get loader() {

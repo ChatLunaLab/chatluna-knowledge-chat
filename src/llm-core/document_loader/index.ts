@@ -3,9 +3,9 @@ import { DocumentLoader, DocumentLoaderFields } from './types'
 import { Config } from '../..'
 import path from 'path'
 import fs from 'fs/promises'
-import { Document } from 'langchain/dist/document'
+import { Document } from 'langchain/document'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
-import { RecursiveCharacterTextSplitter } from 'langchain/dist/text_splitter'
+import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
 export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []
     private _supportLoaders: Record<string, DocumentLoader> = {}
