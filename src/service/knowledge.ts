@@ -39,16 +39,16 @@ export class KnowledgeConfigService {
             this._knowledgeConfig.push(preset)
         }
 
-        for (const configKey in this._knowledgeConfig) {
-            const query = this._knowledgeConfig[configKey].query
+        for (const knowledge of this._knowledgeConfig) {
+            const query = knowledge.query
 
             if (query == null) {
-                this._knowledgeConfig[configKey].query = await this._asQuery(dataDir)
+                knowledge.query = await this._asQuery(dataDir)
 
                 continue
             }
 
-            this._knowledgeConfig[configKey].query = await this._parseQuery(query, dataDir, 0)
+            knowledge.query = await this._parseQuery(query, dataDir, 0)
         }
 
         this.ctx.schema.set(
@@ -107,9 +107,13 @@ export class KnowledgeConfigService {
     }
 
     private async _asQuery(dir: string) {
-        const files = await fs.readdir(dir)
+        try {
+            const files = await fs.readdir(dir)
 
-        return files.map((file) => path.join(dir, file))
+            return files.map((file) => path.join(dir, file))
+        } catch (err) {
+            return []
+        }
     }
 
     private async _parseQuery(
@@ -125,13 +129,15 @@ export class KnowledgeConfigService {
 
         for (const item of query) {
             if (typeof item === 'string') {
+                console.log(item)
                 result.push(await this._loadDocPath(dataDir, item))
-            } else {
-                const config = await this.getConfig(item.include, false, true)
-                const sub = await this._parseQuery(config.query, dataDir, level + 1)
-
-                result.push(...sub)
+                continue
             }
+
+            const config = await this.getConfig(item.include, false, true)
+            const sub = await this._parseQuery(config.query, dataDir, level + 1)
+
+            result.push(...sub)
         }
 
         return result

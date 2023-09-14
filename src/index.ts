@@ -17,6 +17,7 @@ export function apply(ctx: Context, config: Config) {
         await plugin.registerToService()
 
         await knowledgeConfigService.loadAllConfig()
+        await knowledgeService.loader.init()
 
         await plugins(ctx, plugin, config)
     })
@@ -42,8 +43,8 @@ export const Config = Schema.intersect([
             .description('默认的知识库配置文件'),
         chunkSize: Schema.number()
             .default(500)
-            .max(200)
-            .min(2000)
+            .max(2000)
+            .min(200)
             .description('文本块的切割大小（字符）'),
         chunkOverlap: Schema.number()
             .default(0)
