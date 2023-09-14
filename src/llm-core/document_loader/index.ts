@@ -10,11 +10,8 @@ export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []
     private _supportLoaders: Record<string, DocumentLoader> = {}
 
-    constructor(
-        private ctx: Context,
-        private config: Config
-    ) {
-        super()
+    constructor(ctx: Context, config: Config) {
+        super(ctx, config, null)
 
         setInterval(() => {
             this._supportLoaders = {}
@@ -82,7 +79,7 @@ export class DefaultDocumentLoader extends DocumentLoader {
             }
 
             // eslint-disable-next-line new-cap
-            const loader = new exports.default(this.ctx, this.config) as DocumentLoader
+            const loader = new exports.default(this.ctx, this, this.config) as DocumentLoader
             this._loaders.push(loader)
         }
     }
