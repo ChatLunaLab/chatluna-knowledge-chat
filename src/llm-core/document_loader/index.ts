@@ -6,8 +6,6 @@ import fs from 'fs/promises'
 import { Document } from 'langchain/dist/document'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { RecursiveCharacterTextSplitter } from 'langchain/dist/text_splitter'
-import TextDocumentLoader from './loaders/text'
-
 export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []
     private _supportLoaders: Record<string, DocumentLoader> = {}
@@ -25,20 +23,7 @@ export class DefaultDocumentLoader extends DocumentLoader {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public async load(path: string, fields: DocumentLoaderFields): Promise<Document[]> {
-        let loader = this._supportLoaders[path]
-
-        if (!loader) {
-            const supported = await this.support(path)
-
-            if (!supported) {
-                throw new ChatHubError(
-                    ChatHubErrorCode.KNOWLEDGE_UNSUPPORTED_FILE_TYPE,
-                    new Error(`Unsupported file type: ${path}`)
-                )
-            }
-
-            loader = this._supportLoaders[path]
-        }
+        const loader = await this._getLoader(path)
 
         const documents = await loader.load(path, fields)
 
@@ -58,16 +43,28 @@ export class DefaultDocumentLoader extends DocumentLoader {
             }
         }
 
-        // unsupported ? always fallback to text
+        return false
+    }
 
-        const textLoader = this._loaders.find((loader) => loader instanceof TextDocumentLoader)
+    private async _getLoader(path: string) {
+        let loader = this._supportLoaders[path]
 
-        if (textLoader) {
-            this._supportLoaders[path] = textLoader
-            return true
+        if (loader) {
+            return loader
         }
 
-        return false
+        const supported = await this.support(path)
+
+        if (!supported) {
+            throw new ChatHubError(
+                ChatHubErrorCode.KNOWLEDGE_UNSUPPORTED_FILE_TYPE,
+                new Error(`Unsupported file type: ${path}`)
+            )
+        }
+
+        loader = this._supportLoaders[path]
+
+        return loader
     }
 
     async init() {
