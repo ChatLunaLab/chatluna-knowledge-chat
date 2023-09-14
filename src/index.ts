@@ -52,7 +52,8 @@ export const Config = Schema.intersect([
             ),
         mode: Schema.union([
             Schema.const('default').description('直接对问题查询'),
-            Schema.const('regenerate').description('重新生成问题查询')
+            Schema.const('regenerate').description('重新生成问题查询'),
+            Schema.const('contextual-compression').description('上下文压缩查询')
         ]).description('知识库运行模式')
     }).description('基础配置')
 ])
