@@ -14,6 +14,7 @@ export default class TextDocumentLoader extends DocumentLoader {
         switch (ext.toLowerCase()) {
             case 'text':
             case 'txt':
+            case 'md':
                 return true
             default:
                 return false
