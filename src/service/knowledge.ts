@@ -7,6 +7,8 @@ import { RawKnowledgeConfig } from '../types'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { Embeddings } from 'langchain/embeddings/base'
+import { DefaultDocumentLoader } from '../llm-core/document_loader'
+import { Config } from '..'
 
 const logger = createLogger('chathub-knowledge-chat')
 
@@ -169,9 +171,11 @@ export class KnowledgeConfigService {
 
 export class KnowledgeService {
     private _vectorStores: Record<string, VectorStore> = {}
+    private _loader: DefaultDocumentLoader
 
     constructor(
         private readonly ctx: Context,
+        private readonly config: Config,
         private readonly configService: KnowledgeConfigService
     ) {
         defineDatabase(ctx)
@@ -179,6 +183,8 @@ export class KnowledgeService {
         ctx.on('dispose', async () => {
             this._vectorStores = {}
         })
+
+        this._loader = new DefaultDocumentLoader(ctx, config)
     }
 
     public async loadVectorStore(name: string, embeddings: Embeddings) {
@@ -210,6 +216,10 @@ export class KnowledgeService {
         )
 
         return vectorStore
+    }
+
+    public get loader() {
+        return this._loader
     }
 }
 

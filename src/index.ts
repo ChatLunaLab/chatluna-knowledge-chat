@@ -2,15 +2,17 @@ import { Context, Schema } from 'koishi'
 
 import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
 import { plugins } from './plugin'
-import { KnowledgeConfigService } from './service/knowledge'
+import { KnowledgeConfigService, KnowledgeService } from './service/knowledge'
 
 export let knowledgeConfigService: KnowledgeConfigService
+export let knowledgeService: KnowledgeService
 
 export function apply(ctx: Context, config: Config) {
     const plugin = new ChatHubPlugin(ctx, config, 'knowledge-chat')
 
     ctx.on('ready', async () => {
         knowledgeConfigService = new KnowledgeConfigService(ctx)
+        knowledgeService = new KnowledgeService(ctx, config, knowledgeConfigService)
 
         await plugin.registerToService()
 
@@ -47,9 +49,7 @@ export const Config = Schema.intersect([
             .default(0)
             .max(200)
             .min(0)
-            .description(
-                '文本块之间的最大重叠量（字体）。保留一些重叠可以保持文本块之间的连续性。'
-            ),
+            .description('文本块之间的最大重叠量（字体）。保留一些重叠可以保持文本块之间的连续性'),
         mode: Schema.union([
             Schema.const('default').description('直接对问题查询'),
             Schema.const('regenerate').description('重新生成问题查询'),

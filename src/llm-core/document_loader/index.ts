@@ -1,5 +1,5 @@
 import { Context } from 'koishi'
-import { DocumentLoader } from './types'
+import { DocumentLoader, DocumentLoaderFields } from './types'
 import { Config } from '../..'
 import path from 'path'
 import fs from 'fs/promises'
@@ -24,7 +24,7 @@ export class DefaultDocumentLoader extends DocumentLoader {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public async load(path: string): Promise<Document<Record<string, any>>[]> {
+    public async load(path: string, fields: DocumentLoaderFields): Promise<Document[]> {
         let loader = this._supportLoaders[path]
 
         if (!loader) {
@@ -40,9 +40,12 @@ export class DefaultDocumentLoader extends DocumentLoader {
             loader = this._supportLoaders[path]
         }
 
-        const documents = await loader.load(path)
+        const documents = await loader.load(path, fields)
 
-        const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000 })
+        const textSplitter = new RecursiveCharacterTextSplitter({
+            chunkSize: fields.chunkSize ?? 1000,
+            chunkOverlap: fields.chunkOverlap ?? 100
+        })
 
         return await textSplitter.splitDocuments(documents)
     }
