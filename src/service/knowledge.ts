@@ -1,4 +1,4 @@
-import { Context, randomId, Schema } from 'koishi'
+import { Context, Schema } from 'koishi'
 import { createLogger } from '@dingyi222666/koishi-plugin-chathub/lib/utils/logger'
 import { parseRawModelName } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/utils/count_tokens'
 import path from 'path'
@@ -8,10 +8,10 @@ import { load } from 'js-yaml'
 import { KnowledgeConfig, RawKnowledgeConfig } from '../types'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
-import { Embeddings } from 'langchain/embeddings/base'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
 import { Config } from '..'
 import { ChatHubSaveableVectorStore } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/model/base'
+import { randomUUID } from 'crypto'
 
 const logger = createLogger('chathub-knowledge-chat')
 
@@ -196,33 +196,51 @@ export class KnowledgeService {
         this._loader = new DefaultDocumentLoader(ctx, config)
     }
 
-    public async loadVectorStore(name: string, embeddings: Embeddings) {
-        if (this._vectorStores[name]) {
-            return this._vectorStores[name]
+    async createVectorStore(knowledgeConfig: KnowledgeConfig) {
+        const {
+            path,
+            id,
+            vector_storage: vectorStorage,
+            embeddings: embeddingsName
+        } = knowledgeConfig
+
+        if (this._vectorStores[path]) {
+            return this._vectorStores[path]
         }
 
-        const rawConfig = await this.configService.getConfig(name)
+        const embeddings = await this.ctx.chathub.createEmbeddings(
+            ...parseRawModelName(embeddingsName)
+        )
+
+        const vectorStore = await this.ctx.chathub.platform.createVectorStore(vectorStorage, {
+            key: id,
+            embeddings
+        })
+
+        this._vectorStores[path] = vectorStore
+
+        return vectorStore
+    }
+
+    async loadVectorStore(path: string) {
+        if (this._vectorStores[path]) {
+            return this._vectorStores[path]
+        }
 
         const config = (
             await this.ctx.database.get('chathub_knowledge', {
-                path: rawConfig.path
+                path
             })
         )?.[0]
 
         if (!config) {
             throw new ChatHubError(
                 ChatHubErrorCode.KNOWLEDGE_CONFIG_INVALID,
-                new Error(`Knowledge vector store ${name} not found`)
+                new Error(`Knowledge config ${path} not found`)
             )
         }
 
-        const vectorStore = await this.ctx.chathub.platform.createVectorStore(
-            config.vector_storage,
-            {
-                key: config.id,
-                embeddings
-            }
-        )
+        const vectorStore = await this.createVectorStore(config)
 
         return vectorStore
     }
@@ -234,28 +252,21 @@ export class KnowledgeService {
             return
         }
 
-        const id = randomId()
-
-        const embeddings = await this.ctx.chathub.createEmbeddings(
-            ...parseRawModelName(this.ctx.chathub.config.defaultEmbeddings)
-        )
-
-        const vectorStore = await this.loadVectorStore(
-            this.ctx.chathub.config.defaultVectorStore,
-            embeddings
-        )
-
-        await vectorStore.addDocuments(documents)
-
-        if (vectorStore instanceof ChatHubSaveableVectorStore) {
-            await vectorStore.save()
-        }
+        const id = randomUUID()
 
         const config: KnowledgeConfig = {
             path,
             id,
             vector_storage: this.ctx.chathub.config.defaultVectorStore,
-            embeddings: this.ctx.chathub.config.defaultVectorStore
+            embeddings: this.ctx.chathub.config.defaultEmbeddings
+        }
+
+        const vectorStore = await this.createVectorStore(config)
+
+        await vectorStore.addDocuments(documents)
+
+        if (vectorStore instanceof ChatHubSaveableVectorStore) {
+            await vectorStore.save()
         }
 
         this.ctx.database.upsert('chathub_knowledge', [config])
@@ -284,8 +295,6 @@ function defineDatabase(ctx: Context) {
 
 export function loadKnowledgeConfig(text: string) {
     const config = load(text) as RawKnowledgeConfig
-
-    logger.debug(JSON.stringify(config))
 
     if (config.messages == null || config.name == null) {
         throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_CONFIG_INVALID)
