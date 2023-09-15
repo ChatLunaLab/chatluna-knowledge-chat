@@ -125,7 +125,6 @@ export class KnowledgeConfigService {
 
         for (const item of query) {
             if (typeof item === 'string') {
-                console.log(item)
                 result.push(await this._loadDocPath(dataDir, item))
                 continue
             } else if ('include' in item) {
@@ -310,7 +309,7 @@ function defineDatabase(ctx: Context) {
 export function loadKnowledgeConfig(text: string) {
     const config = load(text) as RawKnowledgeConfig
 
-    if (config.messages == null || config.name == null) {
+    if (config.prompt == null || config.name == null) {
         throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_CONFIG_INVALID)
     }
 

@@ -1,13 +1,12 @@
 name: 'default'
-messages:
-    - role: user
-      content: |
-          这是一些相关资料，接下来请你阅读下面的资料，用简洁直白的回复回答我的问题。
 
-          资料：
-          {knowledge}
+prompt: |
+    这是一些相关资料，接下来请你阅读下面的资料，用简洁直白的回复回答我的问题。
 
-          问题：
-          {input}
+    资料：
+        {context}
 
-mode: 'chat'
+    问题：
+        {question}
+
+chain: 'refine'

@@ -1,10 +1,8 @@
 export interface RawKnowledgeConfig {
     query?: RawKnowledgeConfigQuery[]
     name: string
-    messages: {
-        role: string
-        content: string
-    }[]
+    prompt: string
+    chain: string
     path: string
 }
 

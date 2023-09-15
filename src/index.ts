@@ -33,7 +33,7 @@ export interface Config extends ChatHubPlugin.Config {
     defaultConfig: string
     chunkSize: number
     chunkOverlap: number
-    mode: string
+    mode: 'default' | 'regenerate' | 'contextual-compression'
 }
 
 export const Config = Schema.intersect([

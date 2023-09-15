@@ -1,3 +1,5 @@
+import { SystemPrompts } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/chain/base'
+import { ChatHubChatModel } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/platform/model'
 import { CallbackManagerForChainRun } from 'langchain/callbacks'
 import {
     BaseChain,
@@ -6,10 +8,9 @@ import {
     QAChainParams,
     SerializedChatVectorDBQAChain
 } from 'langchain/chains'
-import { BaseLanguageModel } from 'langchain/dist/base_language'
 import { BaseRetriever } from 'langchain/dist/schema/retriever'
 import { PromptTemplate } from 'langchain/prompts'
-import { AIMessage, BaseMessage, ChainValues, HumanMessage } from 'langchain/schema'
+import { BaseMessage, ChainValues } from 'langchain/schema'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LoadValues = Record<string, any>
@@ -23,6 +24,8 @@ export interface ConversationalFastRetrievalQAChainInput extends ChainInputs {
     combineDocumentsChain: BaseChain
     returnSourceDocuments?: boolean
     inputKey?: string
+    llm: ChatHubChatModel
+    systemPrompts?: SystemPrompts
 }
 
 export class ConversationalFastRetrievalQAChain
@@ -48,6 +51,10 @@ export class ConversationalFastRetrievalQAChain
         )
     }
 
+    llm: ChatHubChatModel
+
+    systemPrompts?: SystemPrompts
+
     retriever: BaseRetriever
 
     combineDocumentsChain: BaseChain
@@ -60,6 +67,8 @@ export class ConversationalFastRetrievalQAChain
         this.combineDocumentsChain = fields.combineDocumentsChain
         this.inputKey = fields.inputKey ?? this.inputKey
         this.returnSourceDocuments = fields.returnSourceDocuments ?? this.returnSourceDocuments
+        this.llm = fields.llm
+        this.systemPrompts = fields.systemPrompts
     }
 
     /**
@@ -68,38 +77,36 @@ export class ConversationalFastRetrievalQAChain
      * @param chatHistory Chat history input which can be a string, an array of BaseMessage instances, or an array of string arrays.
      * @returns A formatted string representing the chat history.
      */
-    static getChatHistoryString(chatHistory: string | BaseMessage[] | string[][]) {
+    static async getChatHistoryString(
+        chatHistory: string | BaseMessage[] | string[][],
+        llm: ChatHubChatModel,
+        systemPrompt?: SystemPrompts
+    ) {
         let historyMessages: BaseMessage[]
+
         if (Array.isArray(chatHistory)) {
-            // TODO: Deprecate on a breaking release
-            if (Array.isArray(chatHistory[0]) && typeof chatHistory[0][0] === 'string') {
-                console.warn(
-                    // eslint-disable-next-line max-len
-                    'Passing chat history as an array of strings is deprecated.\nPlease see https://js.langchain.com/docs/modules/chains/popular/chat_vector_db#externally-managed-memory for more information.'
-                )
-                historyMessages = chatHistory.flat().map((stringMessage, i) => {
-                    if (i % 2 === 0) {
-                        return new HumanMessage(stringMessage)
-                    } else {
-                        return new AIMessage(stringMessage)
-                    }
-                })
-            } else {
-                historyMessages = chatHistory as BaseMessage[]
-            }
-            return historyMessages
-                .map((chatMessage) => {
-                    if (chatMessage._getType() === 'human') {
-                        return `Human: ${chatMessage.content}`
-                    } else if (chatMessage._getType() === 'ai') {
-                        return `Assistant: ${chatMessage.content}`
-                    } else {
-                        return `${chatMessage.content}`
-                    }
-                })
-                .join('\n')
+            historyMessages = chatHistory as BaseMessage[]
         }
-        return chatHistory
+
+        if (systemPrompt) {
+            historyMessages = systemPrompt.concat(historyMessages)
+        }
+
+        historyMessages = await llm.cropMessages(historyMessages, systemPrompt?.length ?? 1)
+
+        // crop message
+
+        return historyMessages
+            .map((chatMessage) => {
+                if (chatMessage._getType() === 'human') {
+                    return `Human: ${chatMessage.content}`
+                } else if (chatMessage._getType() === 'ai') {
+                    return `Assistant: ${chatMessage.content}`
+                } else {
+                    return `${chatMessage.content}`
+                }
+            })
+            .join('\n')
     }
 
     /** @ignore */
@@ -114,8 +121,10 @@ export class ConversationalFastRetrievalQAChain
             throw new Error(`Chat history key ${this.chatHistoryKey} not found.`)
         }
         const question: string = values[this.inputKey]
-        const chatHistory: string = ConversationalFastRetrievalQAChain.getChatHistoryString(
-            values[this.chatHistoryKey]
+        const chatHistory: string = await ConversationalFastRetrievalQAChain.getChatHistoryString(
+            values[this.chatHistoryKey],
+            this.llm,
+            this.systemPrompts
         )
         const newQuestion = question
         const docs = await this.retriever.getRelevantDocuments(
@@ -156,7 +165,7 @@ export class ConversationalFastRetrievalQAChain
     }
 
     static fromLLM(
-        llm: BaseLanguageModel,
+        llm: ChatHubChatModel,
         retriever: BaseRetriever,
         options: {
             outputKey?: string // not used
@@ -166,7 +175,7 @@ export class ConversationalFastRetrievalQAChain
             qaChainOptions?: QAChainParams
         } & Omit<
             ConversationalFastRetrievalQAChainInput,
-            'retriever' | 'combineDocumentsChain' | 'questionGeneratorChain'
+            'retriever' | 'combineDocumentsChain' | 'questionGeneratorChain' | 'llm'
         > = {}
     ): ConversationalFastRetrievalQAChain {
         const {
@@ -185,6 +194,7 @@ export class ConversationalFastRetrievalQAChain
             retriever,
             combineDocumentsChain: qaChain,
             verbose,
+            llm,
             ...rest
         })
         return instance

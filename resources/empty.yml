@@ -1,10 +1,6 @@
 name: 'empty'
 
-messages:
-    - role: user
-      content: |
-          {knowledge}
+prompt: |
+    {context}
 
-          {input}
-
-mode: 'qa'
+    {question}
