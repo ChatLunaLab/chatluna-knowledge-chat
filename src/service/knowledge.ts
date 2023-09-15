@@ -5,7 +5,7 @@ import path from 'path'
 import { Document } from 'langchain/document'
 import fs from 'fs/promises'
 import { load } from 'js-yaml'
-import { KnowledgeConfig, RawKnowledgeConfig } from '../types'
+import { KnowledgeConfig, RawKnowledgeConfig, RawKnowledgeConfigQuery } from '../types'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
@@ -108,36 +108,50 @@ export class KnowledgeConfigService {
 
     private async _asQuery(dir: string) {
         try {
-            const files = await fs.readdir(dir)
+            const files = await fs.readdir(dir, { withFileTypes: true })
 
-            return files.map((file) => path.join(dir, file))
+            return files.map((file) => file.path)
         } catch (err) {
             return []
         }
     }
 
-    private async _parseQuery(
-        query: (string | { include: string })[],
-        dataDir: string,
-        level: number
-    ) {
+    private async _parseQuery(query: RawKnowledgeConfigQuery[], dataDir: string, level: number) {
         if (level > 10) {
             throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_LOOP_INCLUDE)
         }
 
-        const result: (string | { include: string })[] = []
+        const result: RawKnowledgeConfigQuery[] = []
 
         for (const item of query) {
             if (typeof item === 'string') {
                 console.log(item)
                 result.push(await this._loadDocPath(dataDir, item))
                 continue
+            } else if ('include' in item) {
+                const config = await this.getConfig(item.include, false, true)
+                const sub = await this._parseQuery(config.query, dataDir, level + 1)
+
+                result.push(...sub)
+            } else {
+                result.push(...(await this._filterDoc(dataDir, item.regex)))
             }
+        }
 
-            const config = await this.getConfig(item.include, false, true)
-            const sub = await this._parseQuery(config.query, dataDir, level + 1)
+        return result
+    }
 
-            result.push(...sub)
+    private async _filterDoc(dataDir: string, rawRegex: string) {
+        const files = await this._asQuery(dataDir)
+
+        const regex = new RegExp(rawRegex)
+
+        const result: string[] = []
+
+        for (const file of files) {
+            if (regex.test(file)) {
+                result.push(file)
+            }
         }
 
         return result

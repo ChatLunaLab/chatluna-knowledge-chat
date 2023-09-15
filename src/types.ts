@@ -1,5 +1,5 @@
 export interface RawKnowledgeConfig {
-    query?: (string | { include: string })[]
+    query?: RawKnowledgeConfigQuery[]
     name: string
     messages: {
         role: string
@@ -7,6 +7,8 @@ export interface RawKnowledgeConfig {
     }[]
     path: string
 }
+
+export type RawKnowledgeConfigQuery = string | { include: string } | { regex: string }
 
 export interface KnowledgeConfig {
     path: string
