@@ -79,7 +79,7 @@ export class DefaultDocumentLoader extends DocumentLoader {
             }
 
             // eslint-disable-next-line new-cap
-            const loader = new exports.default(this.ctx, this, this.config) as DocumentLoader
+            const loader = new exports.default(this.ctx, this.config, this) as DocumentLoader
             this._loaders.push(loader)
         }
     }

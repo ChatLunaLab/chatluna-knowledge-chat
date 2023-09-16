@@ -36,8 +36,6 @@ export async function apply(
 
             await session.send(`已对 ${path} 解析成 ${documents.length} 个文档块。正在保存至数据库`)
 
-            console.log(JSON.stringify(documents))
-
             await knowledgeService.uploadDocument(documents, path)
 
             return `已成功上传到 ${ctx.chathub.config.defaultVectorStore} 向量数据库`
@@ -98,8 +96,10 @@ async function copyDocument(ctx: Context, filePath: string, copy: boolean) {
         }
     }
 
+    const fileStat = await fs.stat(filePath)
+
     if (!copy) {
-        await fs.symlink(filePath, copyPath, 'file')
+        await fs.symlink(filePath, copyPath, fileStat.isFile() ? 'file' : 'dir')
     } else {
         await fs.copyFile(filePath, copyPath)
     }

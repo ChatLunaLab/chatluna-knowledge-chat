@@ -43,14 +43,16 @@ async function loadDefaultChain(ctx: Context, config: Config, params: CreateChat
 
     const retriever = createRetriever(ctx, config, vectorStores)
 
+    const prompt =
+        rawKnowledge.prompt != null ? PromptTemplate.fromTemplate(rawKnowledge.prompt) : undefined
+
     return ConversationalFastRetrievalQAChain.fromLLM(params.model, retriever, {
         qaChainOptions: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type: (rawKnowledge.chain as any | null) ?? 'stuff',
-            prompt:
-                rawKnowledge.prompt != null
-                    ? PromptTemplate.fromTemplate(rawKnowledge.prompt)
-                    : undefined
+            prompt,
+            questionPrompt: prompt,
+            combinePrompt: prompt
         },
         systemPrompts: params.systemPrompt
     })

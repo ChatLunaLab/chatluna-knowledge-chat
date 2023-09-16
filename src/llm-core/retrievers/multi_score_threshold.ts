@@ -60,7 +60,6 @@ export class MultiScoreThresholdRetriever<V extends VectorStore> extends VectorS
             filteredResults = filteredResults.concat(
                 results.filter(([, score]) => score >= this.minSimilarityScore)
             )
-            console.log(results)
             currentKMap.set(vectorStore, currentK)
         } while (filteredResults.length < currentMaxK && currentSearchK < currentMaxK)
 

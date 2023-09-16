@@ -1,16 +1,21 @@
 import { Document } from 'langchain/dist/document'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
 import fs from 'fs/promises'
+import { createLogger } from '@dingyi222666/koishi-plugin-chathub/lib/utils/logger'
+import path from 'path'
+
+const logger = createLogger('chathub-knowledge-chat')
 
 export default class DirectoryLoader extends DocumentLoader {
-    public async load(path: string, fields: DocumentLoaderFields): Promise<Document[]> {
-        const fileList = (await fs.readdir(path, { withFileTypes: true, recursive: true }))
+    public async load(filePath: string, fields: DocumentLoaderFields): Promise<Document[]> {
+        const fileList = (await fs.readdir(filePath, { withFileTypes: true, recursive: true }))
             .filter((value) => value.isFile())
-            .map((value) => value.path)
+            .map((value) => path.join(value.path, value.name))
 
         let result: Document[] = []
 
         for (const subPath of fileList) {
+            logger.debug(`parse document ${subPath}`)
             const subDocuments = await this.parent?.load(subPath, fields)
 
             if (!subDocuments) {

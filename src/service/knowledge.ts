@@ -74,7 +74,7 @@ export class KnowledgeConfigService {
         }
 
         if (throwError) {
-            throw new Error(`No preset found for keyword ${triggerKeyword}`)
+            throw new Error(`No config found for keyword ${triggerKeyword}`)
         }
 
         return null
