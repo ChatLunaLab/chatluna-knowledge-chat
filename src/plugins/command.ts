@@ -2,6 +2,7 @@ import { ChatChain } from '@dingyi222666/koishi-plugin-chathub/lib/chains/chain'
 import { Context } from 'koishi'
 import { Config, knowledgeService } from '..'
 import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
+import type {} from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/memory/message/database_memory'
 import path from 'path'
 import fs from 'fs/promises'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
@@ -45,6 +46,30 @@ export async function apply(
     ctx.command('chathub.knowledge.delete [path:string]', '删除资料')
         .option('db', '-d --db <string> 数据库名')
         .action(async ({ session }, path) => {})
+}
+
+export async function setRoomKnowledgeConfig(
+    ctx: Context,
+    conversationId: string,
+    configId: string
+) {
+    const queryConversation = (
+        await ctx.database.get('chathub_conversation', {
+            id: conversationId
+        })
+    )?.[0]
+
+    if (queryConversation == null) {
+        throw new ChatHubError(ChatHubErrorCode.ROOM_NOT_FOUND)
+    }
+
+    const rawAdditionalKwargs = queryConversation.additional_kwargs ?? '{}'
+
+    const additionalKwargs = JSON.parse(rawAdditionalKwargs)
+
+    additionalKwargs.knowledgeId = configId
+
+    await ctx.database.upsert('chathub_conversation', [queryConversation])
 }
 
 async function copyDocument(ctx: Context, filePath: string, copy: boolean) {

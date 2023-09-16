@@ -5,7 +5,7 @@ import path from 'path'
 import { Document } from 'langchain/document'
 import fs from 'fs/promises'
 import { load } from 'js-yaml'
-import { KnowledgeConfig, RawKnowledgeConfig, RawKnowledgeConfigQuery } from '../types'
+import { DocumentConfig, RawKnowledgeConfig, RawKnowledgeConfigQuery } from '../types'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
@@ -108,10 +108,13 @@ export class KnowledgeConfigService {
 
     private async _asQuery(dir: string) {
         try {
-            const files = await fs.readdir(dir, { withFileTypes: true })
+            let files = await fs.readdir(dir, { withFileTypes: true })
 
-            return files.map((file) => file.path)
+            files = files.filter((file) => file.isFile() || file.isSymbolicLink())
+
+            return files.map((file) => path.join(file.path, file.name))
         } catch (err) {
+            logger.error(err)
             return []
         }
     }
@@ -209,13 +212,13 @@ export class KnowledgeService {
         this._loader = new DefaultDocumentLoader(ctx, config)
     }
 
-    async createVectorStore(knowledgeConfig: KnowledgeConfig) {
+    async createVectorStore(documentConfig: DocumentConfig) {
         const {
             path,
             id,
             vector_storage: vectorStorage,
             embeddings: embeddingsName
-        } = knowledgeConfig
+        } = documentConfig
 
         if (this._vectorStores[path]) {
             return this._vectorStores[path]
@@ -258,6 +261,25 @@ export class KnowledgeService {
         return vectorStore
     }
 
+    async loadConfig(rawConfig: RawKnowledgeConfig) {
+        const queryList = rawConfig.query
+
+        const result: VectorStore[] = []
+
+        for (const query of queryList) {
+            if (typeof query !== 'string') {
+                logger.error(`The query ${JSON.stringify(query)} is not a string`)
+                continue
+            }
+            logger.info(`Loading knowledge config ${query}`)
+            const vectorStore = await this.loadVectorStore(query)
+
+            result.push(vectorStore)
+        }
+
+        return result
+    }
+
     public async uploadDocument(documents: Document[], path: string) {
         const existsDocument = await this.ctx.database.get('chathub_knowledge', { path })
 
@@ -267,7 +289,7 @@ export class KnowledgeService {
 
         const id = randomUUID()
 
-        const config: KnowledgeConfig = {
+        const config: DocumentConfig = {
             path,
             id,
             vector_storage: this.ctx.chathub.config.defaultVectorStore,

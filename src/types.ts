@@ -8,7 +8,7 @@ export interface RawKnowledgeConfig {
 
 export type RawKnowledgeConfigQuery = string | { include: string } | { regex: string }
 
-export interface KnowledgeConfig {
+export interface DocumentConfig {
     path: string
     id: string
     vector_storage: string
@@ -17,6 +17,6 @@ export interface KnowledgeConfig {
 
 declare module 'koishi' {
     interface Tables {
-        chathub_knowledge: KnowledgeConfig
+        chathub_knowledge: DocumentConfig
     }
 }

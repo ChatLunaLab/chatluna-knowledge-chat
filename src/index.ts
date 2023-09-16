@@ -33,6 +33,7 @@ export interface Config extends ChatHubPlugin.Config {
     defaultConfig: string
     chunkSize: number
     chunkOverlap: number
+    minSimilarityScore: number
     mode: 'default' | 'regenerate' | 'contextual-compression'
 }
 
@@ -44,7 +45,7 @@ export const Config = Schema.intersect([
         chunkSize: Schema.number()
             .default(500)
             .max(2000)
-            .min(200)
+            .min(10)
             .description('文本块的切割大小（字符）'),
         chunkOverlap: Schema.number()
             .default(0)
@@ -55,7 +56,16 @@ export const Config = Schema.intersect([
             Schema.const('default').description('直接对问题查询'),
             Schema.const('regenerate').description('重新生成问题查询'),
             Schema.const('contextual-compression').description('上下文压缩查询')
-        ]).description('知识库运行模式')
+        ])
+            .default('default')
+            .description('知识库运行模式'),
+        minSimilarityScore: Schema.number()
+            .role('slider')
+            .min(0)
+            .max(1)
+            .step(0.001)
+            .default(0.5)
+            .description('文本搜索的最小相似度')
     }).description('基础配置')
 ])
 

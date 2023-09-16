@@ -102,6 +102,8 @@ export class ConversationalFastRetrievalQAChain
                     return `Human: ${chatMessage.content}`
                 } else if (chatMessage._getType() === 'ai') {
                     return `Assistant: ${chatMessage.content}`
+                } else if (chatMessage._getType() === 'system') {
+                    return `System: ${chatMessage.content}`
                 } else {
                     return `${chatMessage.content}`
                 }
@@ -114,13 +116,17 @@ export class ConversationalFastRetrievalQAChain
         values: ChainValues,
         runManager?: CallbackManagerForChainRun
     ): Promise<ChainValues> {
+        console.log(values)
         if (!(this.inputKey in values)) {
             throw new Error(`Question key ${this.inputKey} not found.`)
         }
         if (!(this.chatHistoryKey in values)) {
             throw new Error(`Chat history key ${this.chatHistoryKey} not found.`)
         }
-        const question: string = values[this.inputKey]
+        const question: string =
+            values[this.inputKey] instanceof BaseMessage
+                ? (values[this.inputKey] as BaseMessage).content
+                : values[this.inputKey]
         const chatHistory: string = await ConversationalFastRetrievalQAChain.getChatHistoryString(
             values[this.chatHistoryKey],
             this.llm,
