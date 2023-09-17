@@ -243,11 +243,7 @@ export class KnowledgeService {
             return this._vectorStores[path]
         }
 
-        const config = (
-            await this.ctx.database.get('chathub_knowledge', {
-                path
-            })
-        )?.[0]
+        const config = await this._getDocumentConfig(path)
 
         if (!config) {
             throw new ChatHubError(
@@ -259,6 +255,37 @@ export class KnowledgeService {
         const vectorStore = await this.createVectorStore(config)
 
         return vectorStore
+    }
+
+    private async _getDocumentConfig(path: string, vectorStore?: string) {
+        return (
+            await this.ctx.database.get('chathub_knowledge', {
+                path,
+                vector_storage: vectorStore ?? undefined
+            })
+        )?.[0]
+    }
+
+    async deleteDocument(path: string, db: string) {
+        const config = await this._getDocumentConfig(
+            path,
+            db ?? this.ctx.chathub.config.defaultVectorStore
+        )
+
+        if (config == null) {
+            throw new ChatHubError(
+                ChatHubErrorCode.KNOWLEDGE_VECTOR_NOT_FOUND,
+                new Error(`Knowledge vector ${path} not found`)
+            )
+        }
+
+        const vectorStore = await this.createVectorStore(config)
+
+        await vectorStore.delete()
+
+        await this.ctx.database.remove('chathub_knowledge', {
+            path
+        })
     }
 
     async loadConfig(rawConfig: RawKnowledgeConfig) {

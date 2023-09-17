@@ -43,7 +43,19 @@ export async function apply(
 
     ctx.command('chathub.knowledge.delete [path:string]', '删除资料')
         .option('db', '-d --db <string> 数据库名')
-        .action(async ({ session }, path) => {})
+        .action(async ({ options, session }, path) => {
+            await session.send(`正在从数据库中删除 ${path}，是否确认删除？回复大写 Y 以确认删除`)
+
+            const promptResult = await session.prompt(1000 * 30)
+
+            if (promptResult == null || promptResult !== 'Y') {
+                return '已取消删除'
+            }
+
+            await deleteDocument(ctx, path, options.db)
+
+            return `已成功删除文档 ${path}`
+        })
 }
 
 export async function setRoomKnowledgeConfig(
@@ -68,6 +80,22 @@ export async function setRoomKnowledgeConfig(
     additionalKwargs.knowledgeId = configId
 
     await ctx.database.upsert('chathub_conversation', [queryConversation])
+}
+
+async function deleteDocument(ctx: Context, filePath: string, db: string) {
+    try {
+        await fs.access(filePath)
+    } catch (e) {
+        filePath = path.resolve(ctx.baseDir, 'data/chathub/knowledge/data', filePath)
+    }
+
+    const fileStat = await fs.stat(filePath)
+
+    if (fileStat.isSymbolicLink()) {
+        await fs.rm(filePath)
+    }
+
+    await knowledgeService.deleteDocument(filePath, db)
 }
 
 async function copyDocument(ctx: Context, filePath: string, copy: boolean) {
