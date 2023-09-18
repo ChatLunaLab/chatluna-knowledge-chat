@@ -6,6 +6,9 @@ import type {} from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/memory/mes
 import path from 'path'
 import fs from 'fs/promises'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+import { Pagination } from '@dingyi222666/koishi-plugin-chathub/lib/utils/pagination'
+
+import { DocumentConfig } from '../types'
 
 export async function apply(
     ctx: Context,
@@ -56,6 +59,30 @@ export async function apply(
 
             return `已成功删除文档 ${path}`
         })
+
+    const pagination = new Pagination<DocumentConfig>({
+        formatItem: (value) => formatDocumentInfo(value),
+        formatString: {
+            top: '以下是你目前所有已经上传的文档\n',
+            bottom: '你可以使用 chathub.knowledge.set <name> 来切换当前环境里你使用的文档配置（文档配置不是文档）'
+        }
+    })
+
+    ctx.command('chathub.knowledge.list', '列出资料')
+        .option('page', '-p <page:number> 页码', { fallback: 1 })
+        .option('limit', '-l <limit:number> 每页数量', { fallback: 10 })
+        .option('db', '-d --db <string> 数据库名')
+        .action(async ({ options, session }) => {
+            const documents = await knowledgeService.listDocument(options.db)
+
+            await pagination.push(documents)
+
+            return pagination.getFormattedPage(options.page, options.limit)
+        })
+}
+
+function formatDocumentInfo(document: DocumentConfig) {
+    return document.path
 }
 
 export async function setRoomKnowledgeConfig(

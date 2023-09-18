@@ -307,6 +307,18 @@ export class KnowledgeService {
         return result
     }
 
+    public async listDocument(db?: string) {
+        let selection = this.ctx.database.select('chathub_knowledge')
+
+        if (db != null) {
+            selection = selection.where({
+                vector_storage: db
+            })
+        }
+
+        return selection.execute()
+    }
+
     public async uploadDocument(documents: Document[], path: string) {
         const existsDocument = await this.ctx.database.get('chathub_knowledge', { path })
 
