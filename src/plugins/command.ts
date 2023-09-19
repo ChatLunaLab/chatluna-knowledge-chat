@@ -3,12 +3,14 @@ import { Context } from 'koishi'
 import { Config, knowledgeService } from '..'
 import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
 import type {} from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/memory/message/database_memory'
+import type {} from '@dingyi222666/koishi-plugin-chathub/lib/middlewares/create_room'
 import path from 'path'
 import fs from 'fs/promises'
 import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { Pagination } from '@dingyi222666/koishi-plugin-chathub/lib/utils/pagination'
 
 import { DocumentConfig } from '../types'
+import { KnowledgeConfigService } from '../service/knowledge'
 
 export async function apply(
     ctx: Context,
@@ -60,13 +62,18 @@ export async function apply(
             return `已成功删除文档 ${path}`
         })
 
-    const pagination = new Pagination<DocumentConfig>({
-        formatItem: (value) => formatDocumentInfo(value),
-        formatString: {
-            top: '以下是你目前所有已经上传的文档\n',
-            bottom: '你可以使用 chathub.knowledge.set <name> 来切换当前环境里你使用的文档配置（文档配置不是文档）'
-        }
-    })
+    ctx.command('chathub.knowledge.set [name:string]', '切换当前环境使用的文档配置')
+        .option('room', '-r --room <string> 房间名')
+        .action(async ({ options, session }, name) => {
+            console.log(name)
+            await chain.receiveCommand(session, 'set_knowledge_config', {
+                knowledge_config: name,
+                room_resolve: {
+                    id: options.room,
+                    name: options.room
+                }
+            })
+        })
 
     ctx.command('chathub.knowledge.list', '列出资料')
         .option('page', '-p <page:number> 页码', { fallback: 1 })
@@ -79,6 +86,14 @@ export async function apply(
 
             return pagination.getFormattedPage(options.page, options.limit)
         })
+
+    const pagination = new Pagination<DocumentConfig>({
+        formatItem: (value) => formatDocumentInfo(value),
+        formatString: {
+            top: '以下是你目前所有已经上传的文档\n',
+            bottom: '你可以使用 chathub.knowledge.set <name> 来切换当前环境里你使用的文档配置（文档配置不是文档）'
+        }
+    })
 }
 
 function formatDocumentInfo(document: DocumentConfig) {
@@ -87,9 +102,17 @@ function formatDocumentInfo(document: DocumentConfig) {
 
 export async function setRoomKnowledgeConfig(
     ctx: Context,
+    configService: KnowledgeConfigService,
     conversationId: string,
     configId: string
 ) {
+    if ((await configService.getConfig(configId, true, false)) == null) {
+        throw new ChatHubError(
+            ChatHubErrorCode.KNOWLEDGE_CONFIG_INVALID,
+            new Error(`The config id ${configId} is invalid`)
+        )
+    }
+
     const queryConversation = (
         await ctx.database.get('chathub_conversation', {
             id: conversationId
