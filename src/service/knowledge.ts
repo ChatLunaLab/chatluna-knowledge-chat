@@ -258,12 +258,17 @@ export class KnowledgeService {
     }
 
     private async _getDocumentConfig(path: string, vectorStore?: string) {
-        return (
-            await this.ctx.database.get('chathub_knowledge', {
-                path,
-                vector_storage: vectorStore ?? undefined
+        let selection = this.ctx.database.select('chathub_knowledge').where({
+            path
+        })
+
+        if (vectorStore) {
+            selection = selection.where({
+                vector_storage: vectorStore
             })
-        )?.[0]
+        }
+
+        return (await selection.execute())?.[0]
     }
 
     async deleteDocument(path: string, db: string) {
@@ -298,7 +303,7 @@ export class KnowledgeService {
                 logger.error(`The query ${JSON.stringify(query)} is not a string`)
                 continue
             }
-            logger.info(`Loading knowledge config ${query}`)
+            logger.info(`Loading knowledge path ${query}`)
             const vectorStore = await this.loadVectorStore(query)
 
             result.push(vectorStore)

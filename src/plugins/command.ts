@@ -139,10 +139,9 @@ async function deleteDocument(ctx: Context, filePath: string, db: string) {
         filePath = path.resolve(ctx.baseDir, 'data/chathub/knowledge/data', filePath)
     }
 
-    const fileStat = await fs.stat(filePath)
-
-    if (fileStat.isSymbolicLink()) {
-        await fs.rm(filePath)
+    if (filePath.startsWith(ctx.baseDir)) {
+        console.log('??')
+        await fs.rm(filePath, { recursive: true })
     }
 
     await knowledgeService.deleteDocument(filePath, db)

@@ -9,6 +9,7 @@ import { VectorStore } from 'langchain/vectorstores/base'
 import { MultiScoreThresholdRetriever } from '../llm-core/retrievers/multi_score_threshold'
 import { ConversationalFastRetrievalQAChain } from '../llm-core/chains/fast'
 import { PromptTemplate } from 'langchain/prompts'
+import { ConversationalRetrievalQAChain } from '../llm-core/chains/regenerate'
 
 export async function apply(
     ctx: Context,
@@ -31,6 +32,8 @@ export async function apply(
 async function loadChain(ctx: Context, config: Config, param: CreateChatHubLLMChainParams) {
     if (config.mode === 'default') {
         return loadDefaultChain(ctx, config, param)
+    } else if (config.mode === 'regenerate') {
+        return loadRegenerateChain(ctx, config, param)
     }
 }
 
@@ -47,6 +50,34 @@ async function loadDefaultChain(ctx: Context, config: Config, params: CreateChat
         rawKnowledge.prompt != null ? PromptTemplate.fromTemplate(rawKnowledge.prompt) : undefined
 
     return ConversationalFastRetrievalQAChain.fromLLM(params.model, retriever, {
+        qaChainOptions: {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            type: (rawKnowledge.chain as any | null) ?? 'stuff',
+            prompt,
+            questionPrompt: prompt,
+            combinePrompt: prompt
+        },
+        systemPrompts: params.systemPrompt
+    })
+}
+
+async function loadRegenerateChain(
+    ctx: Context,
+    config: Config,
+    params: CreateChatHubLLMChainParams
+) {
+    const knowledgeId = await getKnowledgeId(ctx, config, params)
+
+    const rawKnowledge = await knowledgeConfigService.getConfig(knowledgeId)
+
+    const vectorStores = await knowledgeService.loadConfig(rawKnowledge)
+
+    const retriever = createRetriever(ctx, config, vectorStores)
+
+    const prompt =
+        rawKnowledge.prompt != null ? PromptTemplate.fromTemplate(rawKnowledge.prompt) : undefined
+
+    return ConversationalRetrievalQAChain.fromLLM(params.model, retriever, {
         qaChainOptions: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             type: (rawKnowledge.chain as any | null) ?? 'stuff',
