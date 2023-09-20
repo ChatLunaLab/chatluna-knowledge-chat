@@ -8,7 +8,7 @@ import {
     QAChainParams,
     SerializedChatVectorDBQAChain
 } from 'langchain/chains'
-import { BaseRetriever } from 'langchain/dist/schema/retriever'
+import { BaseRetriever } from 'langchain/schema/retriever'
 import { PromptTemplate } from 'langchain/prompts'
 import { BaseMessage, ChainValues } from 'langchain/schema'
 
@@ -156,7 +156,7 @@ export class ConversationalFastRetrievalQAChain
     }
 
     _chainType(): string {
-        return 'conversational_fa_retrieval_chain'
+        return 'conversational_fast_retrieval_chain'
     }
 
     static async deserialize(

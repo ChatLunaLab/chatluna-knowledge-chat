@@ -10,6 +10,8 @@ import { MultiScoreThresholdRetriever } from '../llm-core/retrievers/multi_score
 import { ConversationalFastRetrievalQAChain } from '../llm-core/chains/fast'
 import { PromptTemplate } from 'langchain/prompts'
 import { ConversationalRetrievalQAChain } from '../llm-core/chains/regenerate'
+import { CreateLLMChainParams } from '../types'
+import { ConversationalContextualCompressionRetrievalQAChain } from '../llm-core/chains/contextual-compression'
 
 export async function apply(
     ctx: Context,
@@ -29,15 +31,7 @@ export async function apply(
     })
 }
 
-async function loadChain(ctx: Context, config: Config, param: CreateChatHubLLMChainParams) {
-    if (config.mode === 'default') {
-        return loadDefaultChain(ctx, config, param)
-    } else if (config.mode === 'regenerate') {
-        return loadRegenerateChain(ctx, config, param)
-    }
-}
-
-async function loadDefaultChain(ctx: Context, config: Config, params: CreateChatHubLLMChainParams) {
+async function loadChain(ctx: Context, config: Config, params: CreateChatHubLLMChainParams) {
     const knowledgeId = await getKnowledgeId(ctx, config, params)
 
     const rawKnowledge = await knowledgeConfigService.getConfig(knowledgeId)
@@ -49,41 +43,63 @@ async function loadDefaultChain(ctx: Context, config: Config, params: CreateChat
     const prompt =
         rawKnowledge.prompt != null ? PromptTemplate.fromTemplate(rawKnowledge.prompt) : undefined
 
-    return ConversationalFastRetrievalQAChain.fromLLM(params.model, retriever, {
+    const createParams: CreateLLMChainParams = {
+        prompt,
+        retriever,
+        vectorStores,
+        rawKnowledge,
+        knowledgeId,
+        systemPrompt: params.systemPrompt,
+        model: params.model
+    }
+
+    if (config.mode === 'default') {
+        return loadDefaultChain(createParams)
+    } else if (config.mode === 'regenerate') {
+        return loadRegenerateChain(createParams)
+    } else if (config.mode === 'contextual-compression') {
+        return loadContextualCompressionChain(createParams)
+    }
+}
+
+async function loadDefaultChain(params: CreateLLMChainParams) {
+    return ConversationalFastRetrievalQAChain.fromLLM(params.model, params.retriever, {
         qaChainOptions: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            type: (rawKnowledge.chain as any | null) ?? 'stuff',
-            prompt,
-            questionPrompt: prompt,
-            combinePrompt: prompt
+            type: (params.rawKnowledge.chain as any | null) ?? 'stuff',
+            prompt: params.prompt,
+            questionPrompt: params.prompt,
+            combinePrompt: params.prompt
         },
         systemPrompts: params.systemPrompt
     })
 }
 
-async function loadRegenerateChain(
-    ctx: Context,
-    config: Config,
-    params: CreateChatHubLLMChainParams
-) {
-    const knowledgeId = await getKnowledgeId(ctx, config, params)
+async function loadContextualCompressionChain(params: CreateLLMChainParams) {
+    return ConversationalContextualCompressionRetrievalQAChain.fromLLM(
+        params.model,
+        params.retriever,
+        {
+            qaChainOptions: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: (params.rawKnowledge.chain as any | null) ?? 'stuff',
+                prompt: params.prompt,
+                questionPrompt: params.prompt,
+                combinePrompt: params.prompt
+            },
+            systemPrompts: params.systemPrompt
+        }
+    )
+}
 
-    const rawKnowledge = await knowledgeConfigService.getConfig(knowledgeId)
-
-    const vectorStores = await knowledgeService.loadConfig(rawKnowledge)
-
-    const retriever = createRetriever(ctx, config, vectorStores)
-
-    const prompt =
-        rawKnowledge.prompt != null ? PromptTemplate.fromTemplate(rawKnowledge.prompt) : undefined
-
-    return ConversationalRetrievalQAChain.fromLLM(params.model, retriever, {
+async function loadRegenerateChain(params: CreateLLMChainParams) {
+    return ConversationalRetrievalQAChain.fromLLM(params.model, params.retriever, {
         qaChainOptions: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            type: (rawKnowledge.chain as any | null) ?? 'stuff',
-            prompt,
-            questionPrompt: prompt,
-            combinePrompt: prompt
+            type: (params.rawKnowledge.chain as any | null) ?? 'stuff',
+            prompt: params.prompt,
+            questionPrompt: params.prompt,
+            combinePrompt: params.prompt
         },
         systemPrompts: params.systemPrompt
     })
