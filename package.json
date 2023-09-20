@@ -64,7 +64,7 @@
   },
   "koishi": {
     "description": {
-      "zh": "为大语言模型补充资料进行知识问答"
+      "zh": "使用大语言模型进行知识库问答"
     },
     "service": {
       "required": [

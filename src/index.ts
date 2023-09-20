@@ -70,3 +70,15 @@ export const Config = Schema.intersect([
 ])
 
 export const using = ['chathub']
+
+export const usage = `
+现我们不再直接依赖相关库，你需要自己安装相关依赖到 koishi 根目录下。
+
+要查看如何配置 pdf 文件支持[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/how_to/pdf)
+
+要查看如何配置 csv 数据库，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/csv)
+
+要查看如何配置 docx 数据库，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/docx)
+
+要查看如何配置 web 数据库，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/web_loaders/web_cheerio)
+`
