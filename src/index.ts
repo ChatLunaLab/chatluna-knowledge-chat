@@ -35,6 +35,8 @@ export interface Config extends ChatHubPlugin.Config {
     chunkOverlap: number
     minSimilarityScore: number
     mode: 'default' | 'regenerate' | 'contextual-compression'
+    unstructuredApiEndpoint: string
+    unstructuredApiKey: string
 }
 
 export const Config = Schema.intersect([
@@ -66,7 +68,16 @@ export const Config = Schema.intersect([
             .step(0.001)
             .default(0.5)
             .description('文本搜索的最小相似度')
-    }).description('基础配置')
+    }).description('基础配置'),
+
+    Schema.object({
+        unstructuredApiEndpoint: Schema.string()
+            .role('url')
+            .default('http://127.0.0.1:8000')
+            .description('unstructured 接口地址'),
+
+        unstructuredApiKey: Schema.string().role('secret').description('unstructured 接口密钥')
+    }).description('unstructured 配置')
 ])
 
 export const using = ['chathub']
@@ -74,7 +85,7 @@ export const using = ['chathub']
 export const usage = `
 现我们不再直接依赖相关库，你需要自己安装相关依赖到 koishi 根目录下。
 
-要查看如何配置 pdf 文件支持[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/how_to/pdf)
+要查看如何配置 pdf 文件, 看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/how_to/pdf)
 
 要查看如何配置 csv 数据库，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/csv)
 
