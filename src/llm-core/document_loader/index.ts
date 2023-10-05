@@ -4,7 +4,10 @@ import { Config } from '../..'
 import path from 'path'
 import fs from 'fs/promises'
 import { Document } from 'langchain/document'
-import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+import {
+    ChatHubError,
+    ChatHubErrorCode
+} from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
 export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []
@@ -19,7 +22,10 @@ export class DefaultDocumentLoader extends DocumentLoader {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public async load(path: string, fields: DocumentLoaderFields): Promise<Document[]> {
+    public async load(
+        path: string,
+        fields: DocumentLoaderFields
+    ): Promise<Document[]> {
         const loader = await this._getLoader(path)
 
         const documents = await loader.load(path, fields)
@@ -79,7 +85,11 @@ export class DefaultDocumentLoader extends DocumentLoader {
             }
 
             // eslint-disable-next-line new-cap
-            const loader = new exports.default(this.ctx, this.config, this) as DocumentLoader
+            const loader = new exports.default(
+                this.ctx,
+                this.config,
+                this
+            ) as DocumentLoader
             this._loaders.push(loader)
         }
     }

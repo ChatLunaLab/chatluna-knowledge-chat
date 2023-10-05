@@ -7,8 +7,13 @@ import path from 'path'
 const logger = createLogger('chathub-knowledge-chat')
 
 export default class DirectoryLoader extends DocumentLoader {
-    public async load(filePath: string, fields: DocumentLoaderFields): Promise<Document[]> {
-        const fileList = (await fs.readdir(filePath, { withFileTypes: true, recursive: true }))
+    public async load(
+        filePath: string,
+        fields: DocumentLoaderFields
+    ): Promise<Document[]> {
+        const fileList = (
+            await fs.readdir(filePath, { withFileTypes: true, recursive: true })
+        )
             .filter((value) => value.isFile())
             .map((value) => path.join(value.path, value.name))
 

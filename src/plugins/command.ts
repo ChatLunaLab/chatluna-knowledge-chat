@@ -6,7 +6,10 @@ import type {} from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/memory/mes
 import type {} from '@dingyi222666/koishi-plugin-chathub/lib/middlewares/create_room'
 import path from 'path'
 import fs from 'fs/promises'
-import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+import {
+    ChatHubError,
+    ChatHubErrorCode
+} from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { Pagination } from '@dingyi222666/koishi-plugin-chathub/lib/utils/pagination'
 
 import { DocumentConfig } from '../types'
@@ -23,7 +26,9 @@ export async function apply(
     ctx.command('chathub.knowledge.upload <path:string>', '上传资料')
         .option('size', '-s --size <value:number> 文本块的切割大小（字符）')
         .option('overlap', '-o --overlap <value:number> 文件路径')
-        .option('copy', '-c --copy <value:boolean> 是否把数据复制到缓存路径', { fallback: false })
+        .option('copy', '-c --copy <value:boolean> 是否把数据复制到缓存路径', {
+            fallback: false
+        })
         .action(async ({ options, session }, path) => {
             path = await copyDocument(ctx, path, options.copy)
             const loader = knowledgeService.loader
@@ -39,7 +44,9 @@ export async function apply(
                 chunkSize: options.size ?? config.chunkSize
             })
 
-            await session.send(`已对 ${path} 解析成 ${documents.length} 个文档块。正在保存至数据库`)
+            await session.send(
+                `已对 ${path} 解析成 ${documents.length} 个文档块。正在保存至数据库`
+            )
 
             await knowledgeService.uploadDocument(documents, path)
 
@@ -49,7 +56,9 @@ export async function apply(
     ctx.command('chathub.knowledge.delete [path:string]', '删除资料')
         .option('db', '-d --db <string> 数据库名')
         .action(async ({ options, session }, path) => {
-            await session.send(`正在从数据库中删除 ${path}，是否确认删除？回复大写 Y 以确认删除`)
+            await session.send(
+                `正在从数据库中删除 ${path}，是否确认删除？回复大写 Y 以确认删除`
+            )
 
             const promptResult = await session.prompt(1000 * 30)
 
@@ -62,7 +71,10 @@ export async function apply(
             return `已成功删除文档 ${path}`
         })
 
-    ctx.command('chathub.knowledge.set [name:string]', '切换当前环境使用的文档配置')
+    ctx.command(
+        'chathub.knowledge.set [name:string]',
+        '切换当前环境使用的文档配置'
+    )
         .option('room', '-r --room <string> 房间名')
         .action(async ({ options, session }, name) => {
             console.log(name)
@@ -136,7 +148,11 @@ async function deleteDocument(ctx: Context, filePath: string, db: string) {
     try {
         await fs.access(filePath)
     } catch (e) {
-        filePath = path.resolve(ctx.baseDir, 'data/chathub/knowledge/data', filePath)
+        filePath = path.resolve(
+            ctx.baseDir,
+            'data/chathub/knowledge/data',
+            filePath
+        )
     }
 
     if (filePath.startsWith(ctx.baseDir)) {

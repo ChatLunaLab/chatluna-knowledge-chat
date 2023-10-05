@@ -1,7 +1,10 @@
 import { VectorStore, VectorStoreRetriever } from 'langchain/vectorstores/base'
 import { MultiVectorStoreRetrieverInput } from './types'
 import { Document } from 'langchain/document'
-import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+import {
+    ChatHubError,
+    ChatHubErrorCode
+} from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 
 export type ScoreThresholdRetrieverInput<V extends VectorStore> = Omit<
     MultiVectorStoreRetrieverInput<V>,
@@ -12,7 +15,9 @@ export type ScoreThresholdRetrieverInput<V extends VectorStore> = Omit<
     minSimilarityScore: number
 }
 
-export class MultiScoreThresholdRetriever<V extends VectorStore> extends VectorStoreRetriever<V> {
+export class MultiScoreThresholdRetriever<
+    V extends VectorStore
+> extends VectorStoreRetriever<V> {
     minSimilarityScore: number
 
     kIncrement = 5
@@ -29,7 +34,8 @@ export class MultiScoreThresholdRetriever<V extends VectorStore> extends VectorS
             searchType: input.searchType
         })
         this.maxK = input.maxK ?? this.maxK
-        this.minSimilarityScore = input.minSimilarityScore ?? this.minSimilarityScore
+        this.minSimilarityScore =
+            input.minSimilarityScore ?? this.minSimilarityScore
         this.kIncrement = input.kIncrement ?? this.kIncrement
         this.vectorStores = input.vectorStores
     }
@@ -61,10 +67,15 @@ export class MultiScoreThresholdRetriever<V extends VectorStore> extends VectorS
                 results.filter(([, score]) => score >= this.minSimilarityScore)
             )
             currentKMap.set(vectorStore, currentK)
-        } while (filteredResults.length < currentMaxK && currentSearchK < currentMaxK)
+        } while (
+            filteredResults.length < currentMaxK &&
+            currentSearchK < currentMaxK
+        )
 
         console.log(filteredResults)
-        return filteredResults.map((documents) => documents[0]).slice(0, this.maxK)
+        return filteredResults
+            .map((documents) => documents[0])
+            .slice(0, this.maxK)
     }
 
     pickVectorStore(index: number): [VectorStore, number] {

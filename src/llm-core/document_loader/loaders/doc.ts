@@ -3,7 +3,10 @@ import { DocumentLoader, DocumentLoaderFields } from '../types'
 import { DocxLoader } from 'langchain/document_loaders/fs/docx'
 
 export default class DocXDocumentLoader extends DocumentLoader {
-    public load(path: string, fields: DocumentLoaderFields): Promise<Document[]> {
+    public load(
+        path: string,
+        fields: DocumentLoaderFields
+    ): Promise<Document[]> {
         const loader = new DocxLoader(path)
 
         return loader.load()

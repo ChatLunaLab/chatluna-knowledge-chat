@@ -22,7 +22,8 @@ export type LoadValues = Record<string, any>
  * Interface for the input parameters of the
  * ConversationalRetrievalQAChain class.
  */
-export interface ConversationalContextualCompressionRetrievalQAChainInput extends ChainInputs {
+export interface ConversationalContextualCompressionRetrievalQAChainInput
+    extends ChainInputs {
     retriever: BaseRetriever
     combineDocumentsChain: BaseChain
     returnSourceDocuments?: boolean
@@ -64,12 +65,15 @@ export class ConversationalContextualCompressionRetrievalQAChain
 
     returnSourceDocuments = false
 
-    constructor(fields: ConversationalContextualCompressionRetrievalQAChainInput) {
+    constructor(
+        fields: ConversationalContextualCompressionRetrievalQAChainInput
+    ) {
         super(fields)
         this.retriever = fields.retriever
         this.combineDocumentsChain = fields.combineDocumentsChain
         this.inputKey = fields.inputKey ?? this.inputKey
-        this.returnSourceDocuments = fields.returnSourceDocuments ?? this.returnSourceDocuments
+        this.returnSourceDocuments =
+            fields.returnSourceDocuments ?? this.returnSourceDocuments
         this.llm = fields.llm
         this.systemPrompts = fields.systemPrompts
     }
@@ -95,7 +99,10 @@ export class ConversationalContextualCompressionRetrievalQAChain
             historyMessages = systemPrompt.concat(historyMessages)
         }
 
-        historyMessages = await llm.cropMessages(historyMessages, systemPrompt?.length ?? 1)
+        historyMessages = await llm.cropMessages(
+            historyMessages,
+            systemPrompt?.length ?? 1
+        )
 
         // crop message
 
@@ -124,7 +131,9 @@ export class ConversationalContextualCompressionRetrievalQAChain
             throw new Error(`Question key ${this.inputKey} not found.`)
         }
         if (!(this.chatHistoryKey in values)) {
-            throw new Error(`Chat history key ${this.chatHistoryKey} not found.`)
+            throw new Error(
+                `Chat history key ${this.chatHistoryKey} not found.`
+            )
         }
         const question: string =
             values[this.inputKey] instanceof BaseMessage
@@ -187,14 +196,19 @@ export class ConversationalContextualCompressionRetrievalQAChain
             qaChainOptions?: QAChainParams
         } & Omit<
             ConversationalContextualCompressionRetrievalQAChainInput,
-            'retriever' | 'combineDocumentsChain' | 'questionGeneratorChain' | 'llm'
+            | 'retriever'
+            | 'combineDocumentsChain'
+            | 'questionGeneratorChain'
+            | 'llm'
         > = {}
     ): ConversationalContextualCompressionRetrievalQAChain {
         const {
             qaTemplate,
             qaChainOptions = {
                 type: 'stuff',
-                prompt: qaTemplate ? PromptTemplate.fromTemplate(qaTemplate) : undefined
+                prompt: qaTemplate
+                    ? PromptTemplate.fromTemplate(qaTemplate)
+                    : undefined
             },
             verbose,
             ...rest
@@ -202,12 +216,16 @@ export class ConversationalContextualCompressionRetrievalQAChain
 
         const qaChain = loadQAChain(llm, qaChainOptions)
 
-        const baseCompressor = LLMChainExtractor.fromLLM(llm, getDefaultChainPrompt())
+        const baseCompressor = LLMChainExtractor.fromLLM(
+            llm,
+            getDefaultChainPrompt()
+        )
 
-        const contextualCompressionRetriever = new ContextualCompressionRetriever({
-            baseCompressor,
-            baseRetriever: retriever
-        })
+        const contextualCompressionRetriever =
+            new ContextualCompressionRetriever({
+                baseCompressor,
+                baseRetriever: retriever
+            })
 
         const instance = new this({
             retriever: contextualCompressionRetriever,
@@ -232,7 +250,12 @@ function getDefaultChainPrompt(): PromptTemplate {
 
 class NoOutputParser extends BaseOutputParser<string> {
     // eslint-disable-next-line @typescript-eslint/naming-convention
-    lc_namespace = ['langchain', 'retrievers', 'document_compressors', 'chain_extract']
+    lc_namespace = [
+        'langchain',
+        'retrievers',
+        'document_compressors',
+        'chain_extract'
+    ]
 
     noOutputStr = 'NO_OUTPUT'
 

@@ -3,7 +3,10 @@ import { DocumentLoader, DocumentLoaderFields } from '../types'
 import { UnstructuredLoader } from 'langchain/document_loaders/fs/unstructured'
 
 export default class UnstructuredDocumentLoader extends DocumentLoader {
-    public load(path: string, fields: DocumentLoaderFields): Promise<Document[]> {
+    public load(
+        path: string,
+        fields: DocumentLoaderFields
+    ): Promise<Document[]> {
         const loader = new UnstructuredLoader(path, {
             apiKey: this.config.unstructuredApiKey,
             apiUrl: this.config.unstructuredApiEndpoint

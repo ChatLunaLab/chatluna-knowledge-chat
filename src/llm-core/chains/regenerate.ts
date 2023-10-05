@@ -79,7 +79,8 @@ export class ConversationalRetrievalQAChain
         this.retriever = fields.retriever
         this.combineDocumentsChain = fields.combineDocumentsChain
         this.inputKey = fields.inputKey ?? this.inputKey
-        this.returnSourceDocuments = fields.returnSourceDocuments ?? this.returnSourceDocuments
+        this.returnSourceDocuments =
+            fields.returnSourceDocuments ?? this.returnSourceDocuments
         this.llm = fields.llm
         this.questionGeneratorChain = fields.questionGeneratorChain
         this.systemPrompts = fields.systemPrompts
@@ -106,7 +107,10 @@ export class ConversationalRetrievalQAChain
             historyMessages = systemPrompt.concat(historyMessages)
         }
 
-        historyMessages = await llm.cropMessages(historyMessages, systemPrompt?.length ?? 1)
+        historyMessages = await llm.cropMessages(
+            historyMessages,
+            systemPrompt?.length ?? 1
+        )
 
         // crop message
 
@@ -135,17 +139,20 @@ export class ConversationalRetrievalQAChain
             throw new Error(`Question key ${this.inputKey} not found.`)
         }
         if (!(this.chatHistoryKey in values)) {
-            throw new Error(`Chat history key ${this.chatHistoryKey} not found.`)
+            throw new Error(
+                `Chat history key ${this.chatHistoryKey} not found.`
+            )
         }
         const question: string =
             values[this.inputKey] instanceof BaseMessage
                 ? (values[this.inputKey] as BaseMessage).content
                 : values[this.inputKey]
-        const chatHistory: string = await ConversationalRetrievalQAChain.getChatHistoryString(
-            values[this.chatHistoryKey],
-            this.llm,
-            this.systemPrompts
-        )
+        const chatHistory: string =
+            await ConversationalRetrievalQAChain.getChatHistoryString(
+                values[this.chatHistoryKey],
+                this.llm,
+                this.systemPrompts
+            )
 
         let newQuestion = question
 
@@ -217,14 +224,19 @@ export class ConversationalRetrievalQAChain
             qaChainOptions?: QAChainParams
         } & Omit<
             ConversationalRetrievalQAChainInput,
-            'retriever' | 'combineDocumentsChain' | 'questionGeneratorChain' | 'llm'
+            | 'retriever'
+            | 'combineDocumentsChain'
+            | 'questionGeneratorChain'
+            | 'llm'
         > = {}
     ): ConversationalRetrievalQAChain {
         const {
             qaTemplate,
             qaChainOptions = {
                 type: 'stuff',
-                prompt: qaTemplate ? PromptTemplate.fromTemplate(qaTemplate) : undefined
+                prompt: qaTemplate
+                    ? PromptTemplate.fromTemplate(qaTemplate)
+                    : undefined
             },
             verbose,
             ...rest

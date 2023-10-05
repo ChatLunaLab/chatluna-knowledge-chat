@@ -55,7 +55,8 @@ async function knowledgeConfigMiddleware(
 
         room = rooms.find(
             (room) =>
-                room.roomName === middlewareContext.options.room_resolve?.name ||
+                room.roomName ===
+                    middlewareContext.options.room_resolve?.name ||
                 room.roomId === roomId
         )
     }

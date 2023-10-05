@@ -19,19 +19,27 @@ export async function apply(
     plugin: ChatHubPlugin,
     chain: ChatChain
 ): Promise<void> {
-    await plugin.registerChatChainProvider('knowledge-chat', '知识库问答', async (params) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const chain = await loadChain(ctx, config, params)
+    await plugin.registerChatChainProvider(
+        'knowledge-chat',
+        '知识库问答',
+        async (params) => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const chain = await loadChain(ctx, config, params)
 
-        return ChatHubWrapperChain.fromLLM(params.model, {
-            historyMemory: params.historyMemory,
-            chain,
-            inputKey: 'question'
-        })
-    })
+            return ChatHubWrapperChain.fromLLM(params.model, {
+                historyMemory: params.historyMemory,
+                chain,
+                inputKey: 'question'
+            })
+        }
+    )
 }
 
-async function loadChain(ctx: Context, config: Config, params: CreateChatHubLLMChainParams) {
+async function loadChain(
+    ctx: Context,
+    config: Config,
+    params: CreateChatHubLLMChainParams
+) {
     const knowledgeId = await getKnowledgeId(ctx, config, params)
 
     const rawKnowledge = await knowledgeConfigService.getConfig(knowledgeId)
@@ -41,7 +49,9 @@ async function loadChain(ctx: Context, config: Config, params: CreateChatHubLLMC
     const retriever = createRetriever(ctx, config, vectorStores)
 
     const prompt =
-        rawKnowledge.prompt != null ? PromptTemplate.fromTemplate(rawKnowledge.prompt) : undefined
+        rawKnowledge.prompt != null
+            ? PromptTemplate.fromTemplate(rawKnowledge.prompt)
+            : undefined
 
     const createParams: CreateLLMChainParams = {
         prompt,
@@ -63,16 +73,20 @@ async function loadChain(ctx: Context, config: Config, params: CreateChatHubLLMC
 }
 
 async function loadDefaultChain(params: CreateLLMChainParams) {
-    return ConversationalFastRetrievalQAChain.fromLLM(params.model, params.retriever, {
-        qaChainOptions: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            type: (params.rawKnowledge.chain as any | null) ?? 'stuff',
-            prompt: params.prompt,
-            questionPrompt: params.prompt,
-            combinePrompt: params.prompt
-        },
-        systemPrompts: params.systemPrompt
-    })
+    return ConversationalFastRetrievalQAChain.fromLLM(
+        params.model,
+        params.retriever,
+        {
+            qaChainOptions: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: (params.rawKnowledge.chain as any | null) ?? 'stuff',
+                prompt: params.prompt,
+                questionPrompt: params.prompt,
+                combinePrompt: params.prompt
+            },
+            systemPrompts: params.systemPrompt
+        }
+    )
 }
 
 async function loadContextualCompressionChain(params: CreateLLMChainParams) {
@@ -93,30 +107,44 @@ async function loadContextualCompressionChain(params: CreateLLMChainParams) {
 }
 
 async function loadRegenerateChain(params: CreateLLMChainParams) {
-    return ConversationalRetrievalQAChain.fromLLM(params.model, params.retriever, {
-        qaChainOptions: {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            type: (params.rawKnowledge.chain as any | null) ?? 'stuff',
-            prompt: params.prompt,
-            questionPrompt: params.prompt,
-            combinePrompt: params.prompt
-        },
-        systemPrompts: params.systemPrompt
-    })
+    return ConversationalRetrievalQAChain.fromLLM(
+        params.model,
+        params.retriever,
+        {
+            qaChainOptions: {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                type: (params.rawKnowledge.chain as any | null) ?? 'stuff',
+                prompt: params.prompt,
+                questionPrompt: params.prompt,
+                combinePrompt: params.prompt
+            },
+            systemPrompts: params.systemPrompt
+        }
+    )
 }
 
-async function getKnowledgeId(ctx: Context, config: Config, params: CreateChatHubLLMChainParams) {
-    const chatHistory = params.historyMemory.chatHistory as KoishiDataBaseChatMessageHistory
+async function getKnowledgeId(
+    ctx: Context,
+    config: Config,
+    params: CreateChatHubLLMChainParams
+) {
+    const chatHistory = params.historyMemory
+        .chatHistory as KoishiDataBaseChatMessageHistory
 
     const rawKnowledgeId =
-        (await chatHistory.getAdditionalKwargs('knowledgeId')) ?? config.defaultConfig
+        (await chatHistory.getAdditionalKwargs('knowledgeId')) ??
+        config.defaultConfig
 
     await chatHistory.updateAdditionalKwargs('knowledgeId', rawKnowledgeId)
 
     return rawKnowledgeId
 }
 
-function createRetriever(ctx: Context, config: Config, vectorStores: VectorStore[]) {
+function createRetriever(
+    ctx: Context,
+    config: Config,
+    vectorStores: VectorStore[]
+) {
     return MultiScoreThresholdRetriever.fromVectorStores(vectorStores, {
         minSimilarityScore: config.minSimilarityScore
     })

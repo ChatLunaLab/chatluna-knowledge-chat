@@ -3,7 +3,10 @@ import { DocumentLoader, DocumentLoaderFields } from '../types'
 import { PDFLoader } from 'langchain/document_loaders/fs/pdf'
 
 export default class PDFDocumentLoader extends DocumentLoader {
-    public load(path: string, fields: DocumentLoaderFields): Promise<Document[]> {
+    public load(
+        path: string,
+        fields: DocumentLoaderFields
+    ): Promise<Document[]> {
         const loader = new PDFLoader(path)
 
         return loader.load()
