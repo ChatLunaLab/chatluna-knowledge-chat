@@ -14,8 +14,6 @@ export default class TextDocumentLoader extends DocumentLoader {
     public async support(path: string): Promise<boolean> {
         const ext = path.split('.').pop() || ''
 
-        console.log(ext)
-
         switch (ext.toLowerCase()) {
             case 'text':
             case 'txt':

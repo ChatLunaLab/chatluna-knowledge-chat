@@ -40,8 +40,6 @@ async function knowledgeConfigMiddleware(
         options: { room }
     } = middlewareContext
 
-    console.log(command)
-
     if (command !== 'set_knowledge_config') {
         return ChainMiddlewareRunStatus.SKIPPED
     }

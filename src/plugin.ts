@@ -5,7 +5,11 @@ import path from 'path'
 import { ChatChain } from '@dingyi222666/koishi-plugin-chathub/lib/chains/chain'
 import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
 
-export async function plugins(ctx: Context, plugin: ChatHubPlugin, config: Config) {
+export async function plugins(
+    ctx: Context,
+    plugin: ChatHubPlugin,
+    config: Config
+) {
     const list = await fs.readdir(path.join(__dirname, 'plugins'))
 
     const chain = ctx.chathub.chatChain

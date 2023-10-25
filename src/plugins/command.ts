@@ -77,7 +77,6 @@ export async function apply(
     )
         .option('room', '-r --room <string> 房间名')
         .action(async ({ options, session }, name) => {
-            console.log(name)
             await chain.receiveCommand(session, 'set_knowledge_config', {
                 knowledge_config: name,
                 room_resolve: {
@@ -156,7 +155,6 @@ async function deleteDocument(ctx: Context, filePath: string, db: string) {
     }
 
     if (filePath.startsWith(ctx.baseDir)) {
-        console.log('??')
         await fs.rm(filePath, { recursive: true })
     }
 

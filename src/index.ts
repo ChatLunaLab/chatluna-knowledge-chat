@@ -12,7 +12,11 @@ export function apply(ctx: Context, config: Config) {
 
     ctx.on('ready', async () => {
         knowledgeConfigService = new KnowledgeConfigService(ctx)
-        knowledgeService = new KnowledgeService(ctx, config, knowledgeConfigService)
+        knowledgeService = new KnowledgeService(
+            ctx,
+            config,
+            knowledgeConfigService
+        )
 
         await plugin.registerToService()
 
@@ -53,7 +57,9 @@ export const Config = Schema.intersect([
             .default(0)
             .max(200)
             .min(0)
-            .description('文本块之间的最大重叠量（字体）。保留一些重叠可以保持文本块之间的连续性'),
+            .description(
+                '文本块之间的最大重叠量（字体）。保留一些重叠可以保持文本块之间的连续性'
+            ),
         mode: Schema.union([
             Schema.const('default').description('直接对问题查询'),
             Schema.const('regenerate').description('重新生成问题查询'),
@@ -76,7 +82,9 @@ export const Config = Schema.intersect([
             .default('http://127.0.0.1:8000')
             .description('unstructured 接口地址'),
 
-        unstructuredApiKey: Schema.string().role('secret').description('unstructured 接口密钥')
+        unstructuredApiKey: Schema.string()
+            .role('secret')
+            .description('unstructured 接口密钥')
     }).description('unstructured 配置')
 ])
 

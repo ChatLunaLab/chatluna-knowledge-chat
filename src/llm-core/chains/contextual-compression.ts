@@ -99,7 +99,7 @@ export class ConversationalContextualCompressionRetrievalQAChain
             historyMessages = systemPrompt.concat(historyMessages)
         }
 
-        historyMessages = await llm.cropMessages(
+        ;[historyMessages] = await llm.cropMessages(
             historyMessages,
             systemPrompt?.length ?? 1
         )
@@ -126,7 +126,6 @@ export class ConversationalContextualCompressionRetrievalQAChain
         values: ChainValues,
         runManager?: CallbackManagerForChainRun
     ): Promise<ChainValues> {
-        console.log(values)
         if (!(this.inputKey in values)) {
             throw new Error(`Question key ${this.inputKey} not found.`)
         }

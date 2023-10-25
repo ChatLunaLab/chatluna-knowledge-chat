@@ -5,8 +5,15 @@ import path from 'path'
 import { Document } from 'langchain/document'
 import fs from 'fs/promises'
 import { load } from 'js-yaml'
-import { DocumentConfig, RawKnowledgeConfig, RawKnowledgeConfigQuery } from '../types'
-import { ChatHubError, ChatHubErrorCode } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+import {
+    DocumentConfig,
+    RawKnowledgeConfig,
+    RawKnowledgeConfigQuery
+} from '../types'
+import {
+    ChatHubError,
+    ChatHubErrorCode
+} from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
 import { Config } from '..'
@@ -25,14 +32,20 @@ export class KnowledgeConfigService {
 
         const presetDir = this.resolveConfigDir()
         const files = await fs.readdir(presetDir)
-        const dataDir = path.resolve(this.ctx.baseDir, 'data/chathub/knowledge/data')
+        const dataDir = path.resolve(
+            this.ctx.baseDir,
+            'data/chathub/knowledge/data'
+        )
 
         this._knowledgeConfig.length = 0
 
         for (const file of files) {
             // use file
 
-            const rawText = await fs.readFile(path.join(presetDir, file), 'utf-8')
+            const rawText = await fs.readFile(
+                path.join(presetDir, file),
+                'utf-8'
+            )
             const preset = loadKnowledgeConfig(rawText)
             preset.path = path.join(presetDir, file)
 
@@ -53,7 +66,9 @@ export class KnowledgeConfigService {
 
         this.ctx.schema.set(
             'knowledge-config',
-            Schema.union(this._knowledgeConfig.map((config) => Schema.const(config.name)))
+            Schema.union(
+                this._knowledgeConfig.map((config) => Schema.const(config.name))
+            )
         )
     }
 
@@ -67,7 +82,9 @@ export class KnowledgeConfigService {
             await this.loadAllConfig()
         }
 
-        const preset = this._knowledgeConfig.find((preset) => preset.name === triggerKeyword)
+        const preset = this._knowledgeConfig.find(
+            (preset) => preset.name === triggerKeyword
+        )
 
         if (preset) {
             return preset
@@ -110,7 +127,9 @@ export class KnowledgeConfigService {
         try {
             let files = await fs.readdir(dir, { withFileTypes: true })
 
-            files = files.filter((file) => file.isFile() || file.isSymbolicLink())
+            files = files.filter(
+                (file) => file.isFile() || file.isSymbolicLink()
+            )
 
             return files.map((file) => path.join(file.path, file.name))
         } catch (err) {
@@ -119,7 +138,11 @@ export class KnowledgeConfigService {
         }
     }
 
-    private async _parseQuery(query: RawKnowledgeConfigQuery[], dataDir: string, level: number) {
+    private async _parseQuery(
+        query: RawKnowledgeConfigQuery[],
+        dataDir: string,
+        level: number
+    ) {
         if (level > 10) {
             throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_LOOP_INCLUDE)
         }
@@ -132,7 +155,11 @@ export class KnowledgeConfigService {
                 continue
             } else if ('include' in item) {
                 const config = await this.getConfig(item.include, false, true)
-                const sub = await this._parseQuery(config.query, dataDir, level + 1)
+                const sub = await this._parseQuery(
+                    config.query,
+                    dataDir,
+                    level + 1
+                )
 
                 result.push(...sub)
             } else {
@@ -172,7 +199,10 @@ export class KnowledgeConfigService {
             return name
         }
 
-        throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_DOC_NOT_FOUND)
+        throw new ChatHubError(
+            ChatHubErrorCode.KNOWLEDGE_DOC_NOT_FOUND,
+            new Error(`Knowledge doc ${name} not found in ${dir}`)
+        )
     }
 
     private async _copyDefaultConfig() {
@@ -187,7 +217,9 @@ export class KnowledgeConfigService {
             const fileStat = await fs.stat(filePath)
             if (fileStat.isFile()) {
                 await fs.mkdir(currentPresetDir, { recursive: true })
-                logger.debug(`copy knowledge config file ${filePath} to ${currentPresetDir}`)
+                logger.debug(
+                    `copy knowledge config file ${filePath} to ${currentPresetDir}`
+                )
                 await fs.copyFile(filePath, path.join(currentPresetDir, file))
             }
         }
@@ -228,10 +260,13 @@ export class KnowledgeService {
             ...parseRawModelName(embeddingsName)
         )
 
-        const vectorStore = await this.ctx.chathub.platform.createVectorStore(vectorStorage, {
-            key: id,
-            embeddings
-        })
+        const vectorStore = await this.ctx.chathub.platform.createVectorStore(
+            vectorStorage,
+            {
+                key: id,
+                embeddings
+            }
+        )
 
         this._vectorStores[path] = vectorStore
 
@@ -300,7 +335,9 @@ export class KnowledgeService {
 
         for (const query of queryList) {
             if (typeof query !== 'string') {
-                logger.error(`The query ${JSON.stringify(query)} is not a string`)
+                logger.error(
+                    `The query ${JSON.stringify(query)} is not a string`
+                )
                 continue
             }
             logger.info(`Loading knowledge path ${query}`)
@@ -325,7 +362,10 @@ export class KnowledgeService {
     }
 
     public async uploadDocument(documents: Document[], path: string) {
-        const existsDocument = await this.ctx.database.get('chathub_knowledge', { path })
+        const existsDocument = await this.ctx.database.get(
+            'chathub_knowledge',
+            { path }
+        )
 
         if (existsDocument.length > 0) {
             return

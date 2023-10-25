@@ -11,7 +11,10 @@ export interface RawKnowledgeConfig {
     path: string
 }
 
-export type RawKnowledgeConfigQuery = string | { include: string } | { regex: string }
+export type RawKnowledgeConfigQuery =
+    | string
+    | { include: string }
+    | { regex: string }
 
 export interface DocumentConfig {
     path: string
