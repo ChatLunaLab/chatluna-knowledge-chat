@@ -1,14 +1,17 @@
-import { Context, Schema } from 'koishi'
+import { Context, Logger, Schema } from 'koishi'
 
 import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
 import { plugins } from './plugin'
 import { KnowledgeConfigService, KnowledgeService } from './service/knowledge'
+import { createLogger } from '@dingyi222666/koishi-plugin-chathub/lib/utils/logger'
 
 export let knowledgeConfigService: KnowledgeConfigService
 export let knowledgeService: KnowledgeService
+export let logger: Logger
 
 export function apply(ctx: Context, config: Config) {
     const plugin = new ChatHubPlugin(ctx, config, 'knowledge-chat')
+    logger = createLogger(ctx, 'chathub-knowledge-chat')
 
     ctx.on('ready', async () => {
         knowledgeConfigService = new KnowledgeConfigService(ctx)
@@ -88,7 +91,7 @@ export const Config = Schema.intersect([
     }).description('unstructured 配置')
 ])
 
-export const using = ['chathub']
+export const inject = ['chathub']
 
 export const usage = `
 现我们不再直接依赖相关库，你需要自己安装相关依赖到 koishi 根目录下。

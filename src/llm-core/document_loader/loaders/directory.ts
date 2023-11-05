@@ -1,10 +1,8 @@
 import { Document } from 'langchain/dist/document'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
 import fs from 'fs/promises'
-import { createLogger } from '@dingyi222666/koishi-plugin-chathub/lib/utils/logger'
+import { logger } from '../../..'
 import path from 'path'
-
-const logger = createLogger('chathub-knowledge-chat')
 
 export default class DirectoryLoader extends DocumentLoader {
     public async load(

@@ -1,5 +1,4 @@
 import { Context, Schema } from 'koishi'
-import { createLogger } from '@dingyi222666/koishi-plugin-chathub/lib/utils/logger'
 import { parseRawModelName } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/utils/count_tokens'
 import path from 'path'
 import { Document } from 'langchain/document'
@@ -16,11 +15,9 @@ import {
 } from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
-import { Config } from '..'
+import { Config, logger } from '..'
 import { ChatHubSaveableVectorStore } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/model/base'
 import { randomUUID } from 'crypto'
-
-const logger = createLogger('chathub-knowledge-chat')
 
 export class KnowledgeConfigService {
     private readonly _knowledgeConfig: RawKnowledgeConfig[] = []
