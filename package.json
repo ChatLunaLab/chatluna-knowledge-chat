@@ -1,7 +1,7 @@
 {
     "name": "koishi-plugin-chatluna-knowledge-chat",
     "description": "Use large language models for knowledge Q&A",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "main": "lib/index.js",
     "typings": "lib/index.d.ts",
     "files": [
@@ -16,7 +16,7 @@
         "plugin",
         "service",
         "chatgpt",
-        "chathub",
+        "chatluna",
         "market"
     ],
     "author": "dingyi222666 <dingyi222666@foxmail.com>",
@@ -68,7 +68,7 @@
         },
         "service": {
             "required": [
-                "chathub"
+                "chatluna"
             ]
         }
     }
