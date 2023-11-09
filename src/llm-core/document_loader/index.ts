@@ -5,9 +5,9 @@ import path from 'path'
 import fs from 'fs/promises'
 import { Document } from 'langchain/document'
 import {
-    ChatHubError,
-    ChatHubErrorCode
-} from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+    ChatLunaError,
+    ChatLunaErrorCode
+} from 'koishi-plugin-chatluna/lib/utils/error'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
 export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []
@@ -59,8 +59,8 @@ export class DefaultDocumentLoader extends DocumentLoader {
         const supported = await this.support(path)
 
         if (!supported) {
-            throw new ChatHubError(
-                ChatHubErrorCode.KNOWLEDGE_UNSUPPORTED_FILE_TYPE,
+            throw new ChatLunaError(
+                ChatLunaErrorCode.KNOWLEDGE_UNSUPPORTED_FILE_TYPE,
                 new Error(`Unsupported file type: ${path}`)
             )
         }

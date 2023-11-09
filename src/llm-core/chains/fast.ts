@@ -1,5 +1,5 @@
-import { SystemPrompts } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/chain/base'
-import { ChatHubChatModel } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/platform/model'
+import { SystemPrompts } from 'koishi-plugin-chatluna/lib/llm-core/chain/base'
+import { ChatLunaChatModel } from 'koishi-plugin-chatluna/lib/llm-core/platform/model'
 import { CallbackManagerForChainRun } from 'langchain/callbacks'
 import {
     BaseChain,
@@ -24,7 +24,7 @@ export interface ConversationalFastRetrievalQAChainInput extends ChainInputs {
     combineDocumentsChain: BaseChain
     returnSourceDocuments?: boolean
     inputKey?: string
-    llm: ChatHubChatModel
+    llm: ChatLunaChatModel
     systemPrompts?: SystemPrompts
 }
 
@@ -51,7 +51,7 @@ export class ConversationalFastRetrievalQAChain
         )
     }
 
-    llm: ChatHubChatModel
+    llm: ChatLunaChatModel
 
     systemPrompts?: SystemPrompts
 
@@ -80,7 +80,7 @@ export class ConversationalFastRetrievalQAChain
      */
     static async getChatHistoryString(
         chatHistory: string | BaseMessage[] | string[][],
-        llm: ChatHubChatModel,
+        llm: ChatLunaChatModel,
         systemPrompt?: SystemPrompts
     ) {
         let historyMessages: BaseMessage[]
@@ -177,7 +177,7 @@ export class ConversationalFastRetrievalQAChain
     }
 
     static fromLLM(
-        llm: ChatHubChatModel,
+        llm: ChatLunaChatModel,
         retriever: BaseRetriever,
         options: {
             outputKey?: string // not used

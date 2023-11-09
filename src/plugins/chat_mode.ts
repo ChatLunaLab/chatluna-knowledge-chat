@@ -1,10 +1,10 @@
-import { ChatChain } from '@dingyi222666/koishi-plugin-chathub/lib/chains/chain'
+import { ChatChain } from 'koishi-plugin-chatluna/lib/chains/chain'
 import { Context } from 'koishi'
 import { Config, knowledgeConfigService, knowledgeService } from '..'
-import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
-import { CreateChatHubLLMChainParams } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/platform/types'
-import { ChatHubWrapperChain } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/chain/wrapper_chain'
-import { KoishiDataBaseChatMessageHistory } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/memory/message/database_memory'
+import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
+import { CreateChatHubLLMChainParams } from 'koishi-plugin-chatluna/lib/llm-core/platform/types'
+import { ChatHubWrapperChain } from 'koishi-plugin-chatluna/lib/llm-core/chain/wrapper_chain'
+import { KoishiChatMessageHistory } from 'koishi-plugin-chatluna/lib/llm-core/memory/message/database_memory'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { MultiScoreThresholdRetriever } from '../llm-core/retrievers/multi_score_threshold'
 import { ConversationalFastRetrievalQAChain } from '../llm-core/chains/fast'
@@ -16,7 +16,7 @@ import { ConversationalContextualCompressionRetrievalQAChain } from '../llm-core
 export async function apply(
     ctx: Context,
     config: Config,
-    plugin: ChatHubPlugin,
+    plugin: ChatLunaPlugin,
     chain: ChatChain
 ): Promise<void> {
     await plugin.registerChatChainProvider(
@@ -129,7 +129,7 @@ async function getKnowledgeId(
     params: CreateChatHubLLMChainParams
 ) {
     const chatHistory = params.historyMemory
-        .chatHistory as KoishiDataBaseChatMessageHistory
+        .chatHistory as KoishiChatMessageHistory
 
     const rawKnowledgeId =
         (await chatHistory.getAdditionalKwargs('knowledgeId')) ??

@@ -1,5 +1,5 @@
 import { Context, Schema } from 'koishi'
-import { parseRawModelName } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/utils/count_tokens'
+import { parseRawModelName } from 'koishi-plugin-chatluna/lib/llm-core/utils/count_tokens'
 import path from 'path'
 import { Document } from 'langchain/document'
 import fs from 'fs/promises'
@@ -10,13 +10,13 @@ import {
     RawKnowledgeConfigQuery
 } from '../types'
 import {
-    ChatHubError,
-    ChatHubErrorCode
-} from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+    ChatLunaError,
+    ChatLunaErrorCode
+} from 'koishi-plugin-chatluna/lib/utils/error'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
 import { Config, logger } from '..'
-import { ChatHubSaveableVectorStore } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/model/base'
+import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/lib/llm-core/model/base'
 import { randomUUID } from 'crypto'
 
 export class KnowledgeConfigService {
@@ -141,7 +141,7 @@ export class KnowledgeConfigService {
         level: number
     ) {
         if (level > 10) {
-            throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_LOOP_INCLUDE)
+            throw new ChatLunaError(ChatLunaErrorCode.KNOWLEDGE_LOOP_INCLUDE)
         }
 
         const result: RawKnowledgeConfigQuery[] = []
@@ -196,8 +196,8 @@ export class KnowledgeConfigService {
             return name
         }
 
-        throw new ChatHubError(
-            ChatHubErrorCode.KNOWLEDGE_DOC_NOT_FOUND,
+        throw new ChatLunaError(
+            ChatLunaErrorCode.KNOWLEDGE_DOC_NOT_FOUND,
             new Error(`Knowledge doc ${name} not found in ${dir}`)
         )
     }
@@ -253,11 +253,11 @@ export class KnowledgeService {
             return this._vectorStores[path]
         }
 
-        const embeddings = await this.ctx.chathub.createEmbeddings(
+        const embeddings = await this.ctx.chatluna.createEmbeddings(
             ...parseRawModelName(embeddingsName)
         )
 
-        const vectorStore = await this.ctx.chathub.platform.createVectorStore(
+        const vectorStore = await this.ctx.chatluna.platform.createVectorStore(
             vectorStorage,
             {
                 key: id,
@@ -278,8 +278,8 @@ export class KnowledgeService {
         const config = await this._getDocumentConfig(path)
 
         if (!config) {
-            throw new ChatHubError(
-                ChatHubErrorCode.KNOWLEDGE_CONFIG_INVALID,
+            throw new ChatLunaError(
+                ChatLunaErrorCode.KNOWLEDGE_CONFIG_INVALID,
                 new Error(`Knowledge config ${path} not found`)
             )
         }
@@ -306,12 +306,12 @@ export class KnowledgeService {
     async deleteDocument(path: string, db: string) {
         const config = await this._getDocumentConfig(
             path,
-            db ?? this.ctx.chathub.config.defaultVectorStore
+            db ?? this.ctx.chatluna.config.defaultVectorStore
         )
 
         if (config == null) {
-            throw new ChatHubError(
-                ChatHubErrorCode.KNOWLEDGE_VECTOR_NOT_FOUND,
+            throw new ChatLunaError(
+                ChatLunaErrorCode.KNOWLEDGE_VECTOR_NOT_FOUND,
                 new Error(`Knowledge vector ${path} not found`)
             )
         }
@@ -373,15 +373,15 @@ export class KnowledgeService {
         const config: DocumentConfig = {
             path,
             id,
-            vector_storage: this.ctx.chathub.config.defaultVectorStore,
-            embeddings: this.ctx.chathub.config.defaultEmbeddings
+            vector_storage: this.ctx.chatluna.config.defaultVectorStore,
+            embeddings: this.ctx.chatluna.config.defaultEmbeddings
         }
 
         const vectorStore = await this.createVectorStore(config)
 
         await vectorStore.addDocuments(documents)
 
-        if (vectorStore instanceof ChatHubSaveableVectorStore) {
+        if (vectorStore instanceof ChatLunaSaveableVectorStore) {
             await vectorStore.save()
         }
 
@@ -413,7 +413,7 @@ export function loadKnowledgeConfig(text: string) {
     const config = load(text) as RawKnowledgeConfig
 
     if (config.prompt == null || config.name == null) {
-        throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_CONFIG_INVALID)
+        throw new ChatLunaError(ChatLunaErrorCode.KNOWLEDGE_CONFIG_INVALID)
     }
 
     return config

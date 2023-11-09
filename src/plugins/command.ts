@@ -1,16 +1,16 @@
-import { ChatChain } from '@dingyi222666/koishi-plugin-chathub/lib/chains/chain'
+import { ChatChain } from 'koishi-plugin-chatluna/lib/chains/chain'
 import { Context } from 'koishi'
 import { Config, knowledgeService } from '..'
-import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
-import type {} from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/memory/message/database_memory'
-import type {} from '@dingyi222666/koishi-plugin-chathub/lib/middlewares/create_room'
+import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
+import type {} from 'koishi-plugin-chatluna/lib/llm-core/memory/message/database_memory'
+import type {} from 'koishi-plugin-chatluna/lib/middlewares/create_room'
 import path from 'path'
 import fs from 'fs/promises'
 import {
-    ChatHubError,
-    ChatHubErrorCode
-} from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
-import { Pagination } from '@dingyi222666/koishi-plugin-chathub/lib/utils/pagination'
+    ChatLunaError,
+    ChatLunaErrorCode
+} from 'koishi-plugin-chatluna/lib/utils/error'
+import { Pagination } from 'koishi-plugin-chatluna/lib/utils/pagination'
 
 import { DocumentConfig } from '../types'
 import { KnowledgeConfigService } from '../service/knowledge'
@@ -18,7 +18,7 @@ import { KnowledgeConfigService } from '../service/knowledge'
 export async function apply(
     ctx: Context,
     config: Config,
-    plugin: ChatHubPlugin,
+    plugin: ChatLunaPlugin,
     chain: ChatChain
 ): Promise<void> {
     ctx.command('chathub.knowledge', 'QA问题相关命令')
@@ -50,7 +50,7 @@ export async function apply(
 
             await knowledgeService.uploadDocument(documents, path)
 
-            return `已成功上传到 ${ctx.chathub.config.defaultVectorStore} 向量数据库`
+            return `已成功上传到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
         })
 
     ctx.command('chathub.knowledge.delete [path:string]', '删除资料')
@@ -118,8 +118,8 @@ export async function setRoomKnowledgeConfig(
     configId: string
 ) {
     if ((await configService.getConfig(configId, true, false)) == null) {
-        throw new ChatHubError(
-            ChatHubErrorCode.KNOWLEDGE_CONFIG_INVALID,
+        throw new ChatLunaError(
+            ChatLunaErrorCode.KNOWLEDGE_CONFIG_INVALID,
             new Error(`The config id ${configId} is invalid`)
         )
     }
@@ -131,7 +131,7 @@ export async function setRoomKnowledgeConfig(
     )?.[0]
 
     if (queryConversation == null) {
-        throw new ChatHubError(ChatHubErrorCode.ROOM_NOT_FOUND)
+        throw new ChatLunaError(ChatLunaErrorCode.ROOM_NOT_FOUND)
     }
 
     const rawAdditionalKwargs = queryConversation.additional_kwargs ?? '{}'
@@ -176,13 +176,13 @@ async function copyDocument(ctx: Context, filePath: string, copy: boolean) {
 
     try {
         if ((await fs.stat(copyPath)).isFile()) {
-            throw new ChatHubError(
-                ChatHubErrorCode.KNOWLEDGE_EXIST_FILE,
+            throw new ChatLunaError(
+                ChatLunaErrorCode.KNOWLEDGE_EXIST_FILE,
                 new Error(`The path already exists: ${copyPath}`)
             )
         }
     } catch (e) {
-        if (e instanceof ChatHubError) {
+        if (e instanceof ChatLunaError) {
             throw e
         }
     }

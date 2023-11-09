@@ -1,16 +1,16 @@
 import { Context, Logger, Schema } from 'koishi'
 
-import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
+import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
 import { plugins } from './plugin'
 import { KnowledgeConfigService, KnowledgeService } from './service/knowledge'
-import { createLogger } from '@dingyi222666/koishi-plugin-chathub/lib/utils/logger'
+import { createLogger } from 'koishi-plugin-chatluna/lib/utils/logger'
 
 export let knowledgeConfigService: KnowledgeConfigService
 export let knowledgeService: KnowledgeService
 export let logger: Logger
 
 export function apply(ctx: Context, config: Config) {
-    const plugin = new ChatHubPlugin(ctx, config, 'knowledge-chat')
+    const plugin = new ChatLunaPlugin(ctx, config, 'knowledge-chat')
     logger = createLogger(ctx, 'chathub-knowledge-chat')
 
     ctx.on('ready', async () => {
@@ -36,7 +36,7 @@ export function apply(ctx: Context, config: Config) {
 
 export const name = '@dingyi222666/chathub-knowledge-chat'
 
-export interface Config extends ChatHubPlugin.Config {
+export interface Config extends ChatLunaPlugin.Config {
     defaultConfig: string
     chunkSize: number
     chunkOverlap: number
@@ -91,16 +91,16 @@ export const Config = Schema.intersect([
     }).description('unstructured 配置')
 ])
 
-export const inject = ['chathub']
+export const inject = ['chatluna']
 
 export const usage = `
 现我们不再直接依赖相关库，你需要自己安装相关依赖到 koishi 根目录下。
 
 要查看如何配置 pdf 文件, 看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/how_to/pdf)
 
-要查看如何配置 csv 数据库，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/csv)
+要查看如何配置 csv，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/csv)
 
-要查看如何配置 docx 数据库，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/docx)
+要查看如何配置 docx，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/docx)
 
-要查看如何配置 web 数据库，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/web_loaders/web_cheerio)
+要查看如何配置 web 网页，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/web_loaders/web_cheerio)
 `

@@ -1,5 +1,5 @@
-import { SystemPrompts } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/chain/base'
-import { ChatHubChatModel } from '@dingyi222666/koishi-plugin-chathub/lib/llm-core/platform/model'
+import { SystemPrompts } from 'koishi-plugin-chatluna/lib/llm-core/chain/base'
+import { ChatLunaChatModel } from 'koishi-plugin-chatluna/lib/llm-core/platform/model'
 import { BasePromptTemplate } from 'langchain/prompts'
 import { VectorStore, VectorStoreRetriever } from 'langchain/vectorstores/base'
 
@@ -24,7 +24,7 @@ export interface DocumentConfig {
 }
 
 export interface CreateLLMChainParams {
-    model: ChatHubChatModel
+    model: ChatLunaChatModel
     knowledgeId: string
     rawKnowledge: RawKnowledgeConfig
     vectorStores: VectorStore[]

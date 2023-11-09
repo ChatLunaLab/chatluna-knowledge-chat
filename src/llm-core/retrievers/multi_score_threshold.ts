@@ -2,9 +2,9 @@ import { VectorStore, VectorStoreRetriever } from 'langchain/vectorstores/base'
 import { MultiVectorStoreRetrieverInput } from './types'
 import { Document } from 'langchain/document'
 import {
-    ChatHubError,
-    ChatHubErrorCode
-} from '@dingyi222666/koishi-plugin-chathub/lib/utils/error'
+    ChatLunaError,
+    ChatLunaErrorCode
+} from 'koishi-plugin-chatluna/lib/utils/error'
 
 export type ScoreThresholdRetrieverInput<V extends VectorStore> = Omit<
     MultiVectorStoreRetrieverInput<V>,
@@ -95,7 +95,9 @@ export class MultiScoreThresholdRetriever<
         options: Omit<ScoreThresholdRetrieverInput<V>, 'vectorStores'>
     ) {
         if (vectorStores.length < 1) {
-            throw new ChatHubError(ChatHubErrorCode.KNOWLEDGE_VECTOR_NOT_FOUND)
+            throw new ChatLunaError(
+                ChatLunaErrorCode.KNOWLEDGE_VECTOR_NOT_FOUND
+            )
         }
         return new this<V>({ ...options, vectorStores })
     }

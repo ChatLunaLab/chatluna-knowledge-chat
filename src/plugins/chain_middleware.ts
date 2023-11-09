@@ -2,21 +2,21 @@ import {
     ChainMiddlewareContext,
     ChainMiddlewareRunStatus,
     ChatChain
-} from '@dingyi222666/koishi-plugin-chathub/lib/chains/chain'
+} from 'koishi-plugin-chatluna/lib/chains/chain'
 import { Context, h, Session } from 'koishi'
 import { Config, knowledgeConfigService } from '..'
-import { ChatHubPlugin } from '@dingyi222666/koishi-plugin-chathub/lib/services/chat'
-import type {} from '@dingyi222666/koishi-plugin-chathub/lib/middlewares/resolve_room'
+import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
+import type {} from 'koishi-plugin-chatluna/lib/middlewares/resolve_room'
 import { setRoomKnowledgeConfig } from './command'
 import {
     checkAdmin,
     getAllJoinedConversationRoom
-} from '@dingyi222666/koishi-plugin-chathub/lib/chains/rooms'
+} from 'koishi-plugin-chatluna/lib/chains/rooms'
 
 export async function apply(
     ctx: Context,
     config: Config,
-    plugin: ChatHubPlugin,
+    plugin: ChatLunaPlugin,
     chain: ChatChain
 ): Promise<void> {
     chain
@@ -81,7 +81,7 @@ async function knowledgeConfigMiddleware(
     return ChainMiddlewareRunStatus.STOP
 }
 
-declare module '@dingyi222666/koishi-plugin-chathub/lib/chains/chain' {
+declare module 'koishi-plugin-chatluna/lib/chains/chain' {
     interface ChainMiddlewareName {
         set_knowledge_config: never
     }
