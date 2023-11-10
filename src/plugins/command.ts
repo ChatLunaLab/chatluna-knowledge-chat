@@ -21,9 +21,9 @@ export async function apply(
     plugin: ChatLunaPlugin,
     chain: ChatChain
 ): Promise<void> {
-    ctx.command('chathub.knowledge', 'QA问题相关命令')
+    ctx.command('chatluna.knowledge', 'QA问题相关命令')
 
-    ctx.command('chathub.knowledge.upload <path:string>', '上传资料')
+    ctx.command('chatluna.knowledge.upload <path:string>', '上传资料')
         .option('size', '-s --size <value:number> 文本块的切割大小（字符）')
         .option('overlap', '-o --overlap <value:number> 文件路径')
         .option('copy', '-c --copy <value:boolean> 是否把数据复制到缓存路径', {
@@ -53,7 +53,7 @@ export async function apply(
             return `已成功上传到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
         })
 
-    ctx.command('chathub.knowledge.delete [path:string]', '删除资料')
+    ctx.command('chatluna.knowledge.delete [path:string]', '删除资料')
         .option('db', '-d --db <string> 数据库名')
         .action(async ({ options, session }, path) => {
             await session.send(
@@ -72,7 +72,7 @@ export async function apply(
         })
 
     ctx.command(
-        'chathub.knowledge.set [name:string]',
+        'chatluna.knowledge.set [name:string]',
         '切换当前环境使用的文档配置'
     )
         .option('room', '-r --room <string> 房间名')
@@ -86,7 +86,7 @@ export async function apply(
             })
         })
 
-    ctx.command('chathub.knowledge.list', '列出资料')
+    ctx.command('chatluna.knowledge.list', '列出资料')
         .option('page', '-p <page:number> 页码', { fallback: 1 })
         .option('limit', '-l <limit:number> 每页数量', { fallback: 10 })
         .option('db', '-d --db <string> 数据库名')
