@@ -11,7 +11,7 @@ export let logger: Logger
 
 export function apply(ctx: Context, config: Config) {
     const plugin = new ChatLunaPlugin(ctx, config, 'knowledge-chat')
-    logger = createLogger(ctx, 'chathub-knowledge-chat')
+    logger = createLogger(ctx, 'chatluna-knowledge-chat')
 
     ctx.on('ready', async () => {
         knowledgeConfigService = new KnowledgeConfigService(ctx)
