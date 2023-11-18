@@ -101,6 +101,7 @@ export class ConversationalContextualCompressionRetrievalQAChain
 
         ;[historyMessages] = await llm.cropMessages(
             historyMessages,
+            null,
             systemPrompt?.length ?? 1
         )
 
