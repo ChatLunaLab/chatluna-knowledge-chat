@@ -111,9 +111,8 @@ export class ConversationalRetrievalQAChain
         ;[historyMessages] = await llm.cropMessages(
             historyMessages,
             null,
-            systemPrompt?.length ?? 1
+            systemPrompt?.length
         )
-
         // crop message
 
         return historyMessages
@@ -174,9 +173,6 @@ export class ConversationalRetrievalQAChain
                 )
             }
         }
-
-        console.log(newQuestion)
-
         const docs = await cropDocuments(
             await this.retriever.getRelevantDocuments(
                 newQuestion,
