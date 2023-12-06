@@ -11,6 +11,8 @@ import {
 import { BaseRetriever } from 'langchain/schema/retriever'
 import { PromptTemplate } from 'langchain/prompts'
 import { BaseMessage, ChainValues } from 'langchain/schema'
+import { Awaitable } from 'koishi'
+import { cropDocuments } from '../prompts/util'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LoadValues = Record<string, any>
@@ -140,10 +142,14 @@ export class ConversationalFastRetrievalQAChain
                 this.systemPrompts
             )
         const newQuestion = question
-        const docs = await this.retriever.getRelevantDocuments(
-            newQuestion,
-            runManager?.getChild('retriever')
+        const docs = await cropDocuments(
+            await this.retriever.getRelevantDocuments(
+                newQuestion,
+                runManager?.getChild('retriever')
+            ),
+            this.llm
         )
+
         const inputs = {
             question: newQuestion,
             input_documents: docs,

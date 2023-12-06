@@ -13,6 +13,7 @@ import {
 import { BaseRetriever } from 'langchain/schema/retriever'
 import { PromptTemplate } from 'langchain/prompts'
 import { BaseMessage, ChainValues } from 'langchain/schema'
+import { cropDocuments } from '../prompts/util'
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const question_generator_template = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
@@ -176,9 +177,12 @@ export class ConversationalRetrievalQAChain
 
         console.log(newQuestion)
 
-        const docs = await this.retriever.getRelevantDocuments(
-            newQuestion,
-            runManager?.getChild('retriever')
+        const docs = await cropDocuments(
+            await this.retriever.getRelevantDocuments(
+                newQuestion,
+                runManager?.getChild('retriever')
+            ),
+            this.llm
         )
         const inputs = {
             question: newQuestion,

@@ -14,6 +14,7 @@ import { PromptTemplate } from 'langchain/prompts'
 import { BaseMessage, ChainValues } from 'langchain/schema'
 import { LLMChainExtractor } from 'langchain/retrievers/document_compressors/chain_extract'
 import { BaseOutputParser } from 'langchain/schema/output_parser'
+import { cropDocuments } from '../prompts/util'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LoadValues = Record<string, any>
@@ -148,10 +149,14 @@ export class ConversationalContextualCompressionRetrievalQAChain
             )
 
         const newQuestion = question
-        const docs = await this.retriever.getRelevantDocuments(
-            newQuestion,
-            runManager?.getChild('retriever')
+        const docs = await cropDocuments(
+            await this.retriever.getRelevantDocuments(
+                newQuestion,
+                runManager?.getChild('retriever')
+            ),
+            this.llm
         )
+
         const inputs = {
             question: newQuestion,
             input_documents: docs,

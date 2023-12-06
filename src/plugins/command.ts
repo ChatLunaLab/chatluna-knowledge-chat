@@ -91,20 +91,20 @@ export async function apply(
         .option('limit', '-l <limit:number> 每页数量', { fallback: 10 })
         .option('db', '-d --db <string> 数据库名')
         .action(async ({ options, session }) => {
+            const pagination = new Pagination<DocumentConfig>({
+                formatItem: (value) => formatDocumentInfo(value),
+                formatString: {
+                    top: '以下是你目前所有已经上传的文档\n',
+                    bottom: '你可以使用 chatluna.knowledge.set <name> 来切换当前环境里你使用的文档配置（文档配置不是文档）'
+                }
+            })
+
             const documents = await knowledgeService.listDocument(options.db)
 
             await pagination.push(documents)
 
             return pagination.getFormattedPage(options.page, options.limit)
         })
-
-    const pagination = new Pagination<DocumentConfig>({
-        formatItem: (value) => formatDocumentInfo(value),
-        formatString: {
-            top: '以下是你目前所有已经上传的文档\n',
-            bottom: '你可以使用 chathub.knowledge.set <name> 来切换当前环境里你使用的文档配置（文档配置不是文档）'
-        }
-    })
 }
 
 function formatDocumentInfo(document: DocumentConfig) {
