@@ -5,14 +5,14 @@ import {
     BaseChain,
     ChainInputs,
     loadQAChain,
-    QAChainParams,
-    SerializedChatVectorDBQAChain
+    QAChainParams
 } from 'langchain/chains'
-import { BaseRetriever } from 'langchain/schema/retriever'
-import { PromptTemplate } from 'langchain/prompts'
-import { BaseMessage, ChainValues } from 'langchain/schema'
-import { Awaitable } from 'koishi'
+import { BaseRetriever } from '@langchain/core/retrievers'
+import { PromptTemplate } from '@langchain/core/prompts'
+import { ChainValues } from '@langchain/core/utils/types'
+import { BaseMessage } from '@langchain/core/messages'
 import { cropDocuments } from '../prompts/util'
+import { QAChainValues } from './types'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LoadValues = Record<string, any>
@@ -31,7 +31,7 @@ export interface ConversationalFastRetrievalQAChainInput extends ChainInputs {
 }
 
 export class ConversationalFastRetrievalQAChain
-    extends BaseChain
+    extends BaseChain<ChainValues, QAChainValues>
     implements ConversationalFastRetrievalQAChainInput
 {
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -119,10 +119,7 @@ export class ConversationalFastRetrievalQAChain
     }
 
     /** @ignore */
-    async _call(
-        values: ChainValues,
-        runManager?: CallbackManagerForChainRun
-    ): Promise<ChainValues> {
+    async _call(values: ChainValues, runManager?: CallbackManagerForChainRun) {
         if (!(this.inputKey in values)) {
             throw new Error(`Question key ${this.inputKey} not found.`)
         }
@@ -170,17 +167,6 @@ export class ConversationalFastRetrievalQAChain
 
     _chainType(): string {
         return 'conversational_fast_retrieval_chain'
-    }
-
-    static async deserialize(
-        _data: SerializedChatVectorDBQAChain,
-        _values: LoadValues
-    ): Promise<ConversationalFastRetrievalQAChain> {
-        throw new Error('Not implemented.')
-    }
-
-    serialize(): SerializedChatVectorDBQAChain {
-        throw new Error('Not implemented.')
     }
 
     static fromLLM(

@@ -1,4 +1,4 @@
-import { BaseRetrieverInput } from 'langchain/schema/retriever'
+import { BaseRetrieverInput } from '@langchain/core/retrievers'
 import {
     VectorStore,
     VectorStoreRetrieverMMRSearchKwargs

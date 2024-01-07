@@ -1,6 +1,6 @@
 import { ChatChain } from 'koishi-plugin-chatluna/lib/chains/chain'
 import { Context } from 'koishi'
-import { Config, knowledgeConfigService, knowledgeService } from '..'
+import { Config } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
 import { CreateChatHubLLMChainParams } from 'koishi-plugin-chatluna/lib/llm-core/platform/types'
 import { ChatHubWrapperChain } from 'koishi-plugin-chatluna/lib/llm-core/chain/wrapper_chain'
@@ -8,7 +8,7 @@ import { KoishiChatMessageHistory } from 'koishi-plugin-chatluna/lib/llm-core/me
 import { VectorStore } from 'langchain/vectorstores/base'
 import { MultiScoreThresholdRetriever } from '../llm-core/retrievers/multi_score_threshold'
 import { ConversationalFastRetrievalQAChain } from '../llm-core/chains/fast'
-import { PromptTemplate } from 'langchain/prompts'
+import { PromptTemplate } from '@langchain/core/prompts'
 import { ConversationalRetrievalQAChain } from '../llm-core/chains/regenerate'
 import { CreateLLMChainParams } from '../types'
 import { ConversationalContextualCompressionRetrievalQAChain } from '../llm-core/chains/contextual-compression'
@@ -42,9 +42,10 @@ async function loadChain(
 ) {
     const knowledgeId = await getKnowledgeId(ctx, config, params)
 
-    const rawKnowledge = await knowledgeConfigService.getConfig(knowledgeId)
+    const rawKnowledge =
+        await ctx.chatluna_knowledge_config.getConfig(knowledgeId)
 
-    const vectorStores = await knowledgeService.loadConfig(rawKnowledge)
+    const vectorStores = await ctx.chatluna_knowledge.loadConfig(rawKnowledge)
 
     const retriever = createRetriever(ctx, config, vectorStores)
 

@@ -7,11 +7,10 @@ import {
     ChainInputs,
     LLMChain,
     loadQAChain,
-    QAChainParams,
-    SerializedChatVectorDBQAChain
+    QAChainParams
 } from 'langchain/chains'
-import { BaseRetriever } from 'langchain/schema/retriever'
-import { PromptTemplate } from 'langchain/prompts'
+import { BaseRetriever } from '@langchain/core/retrievers'
+import { PromptTemplate } from '@langchain/core/prompts'
 import { BaseMessage, ChainValues } from 'langchain/schema'
 import { cropDocuments } from '../prompts/util'
 
@@ -200,17 +199,6 @@ export class ConversationalRetrievalQAChain
 
     _chainType(): string {
         return 'conversational_retrieval_chain'
-    }
-
-    static async deserialize(
-        _data: SerializedChatVectorDBQAChain,
-        _values: LoadValues
-    ): Promise<ConversationalRetrievalQAChain> {
-        throw new Error('Not implemented.')
-    }
-
-    serialize(): SerializedChatVectorDBQAChain {
-        throw new Error('Not implemented.')
     }
 
     static fromLLM(

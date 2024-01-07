@@ -3,7 +3,7 @@ import { ChatLunaChatModel } from 'koishi-plugin-chatluna/lib/llm-core/platform/
 export async function cropDocuments(
     documents: Document[],
     llm: ChatLunaChatModel
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<Document<Record<string, any>>[]> {
     const maxContextSize = llm.getModelMaxContextSize() - 1000
 

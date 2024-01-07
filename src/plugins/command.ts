@@ -1,9 +1,7 @@
 import { ChatChain } from 'koishi-plugin-chatluna/lib/chains/chain'
 import { Context } from 'koishi'
-import { Config, knowledgeService } from '..'
+import { Config } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
-import type {} from 'koishi-plugin-chatluna/lib/llm-core/memory/message/database_memory'
-import type {} from 'koishi-plugin-chatluna/lib/middlewares/create_room'
 import path from 'path'
 import fs from 'fs/promises'
 import {
@@ -13,7 +11,6 @@ import {
 import { Pagination } from 'koishi-plugin-chatluna/lib/utils/pagination'
 
 import { DocumentConfig } from '../types'
-import { KnowledgeConfigService } from '../service/knowledge'
 
 export async function apply(
     ctx: Context,
@@ -31,7 +28,7 @@ export async function apply(
         })
         .action(async ({ options, session }, path) => {
             path = await copyDocument(ctx, path, options.copy)
-            const loader = knowledgeService.loader
+            const loader = ctx.chatluna_knowledge.loader
 
             const supported = await loader.support(path)
 
@@ -48,7 +45,7 @@ export async function apply(
                 `已对 ${path} 解析成 ${documents.length} 个文档块。正在保存至数据库`
             )
 
-            await knowledgeService.uploadDocument(documents, path)
+            await ctx.chatluna_knowledge.uploadDocument(documents, path)
 
             return `已成功上传到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
         })
@@ -99,7 +96,9 @@ export async function apply(
                 }
             })
 
-            const documents = await knowledgeService.listDocument(options.db)
+            const documents = await ctx.chatluna_knowledge.listDocument(
+                options.db
+            )
 
             await pagination.push(documents)
 
@@ -113,11 +112,16 @@ function formatDocumentInfo(document: DocumentConfig) {
 
 export async function setRoomKnowledgeConfig(
     ctx: Context,
-    configService: KnowledgeConfigService,
     conversationId: string,
     configId: string
 ) {
-    if ((await configService.getConfig(configId, true, false)) == null) {
+    if (
+        (await ctx.chatluna_knowledge_config.getConfig(
+            configId,
+            true,
+            false
+        )) == null
+    ) {
         throw new ChatLunaError(
             ChatLunaErrorCode.KNOWLEDGE_CONFIG_INVALID,
             new Error(`The config id ${configId} is invalid`)
@@ -158,7 +162,7 @@ async function deleteDocument(ctx: Context, filePath: string, db: string) {
         await fs.rm(filePath, { recursive: true })
     }
 
-    await knowledgeService.deleteDocument(filePath, db)
+    await ctx.chatluna_knowledge.deleteDocument(filePath, db)
 }
 
 async function copyDocument(ctx: Context, filePath: string, copy: boolean) {

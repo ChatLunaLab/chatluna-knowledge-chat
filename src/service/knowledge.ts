@@ -1,4 +1,4 @@
-import { Context, Schema } from 'koishi'
+import { Context, Schema, Service } from 'koishi'
 import { parseRawModelName } from 'koishi-plugin-chatluna/lib/llm-core/utils/count_tokens'
 import path from 'path'
 import { Document } from 'langchain/document'
@@ -19,10 +19,12 @@ import { Config, logger } from '..'
 import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/lib/llm-core/model/base'
 import { randomUUID } from 'crypto'
 
-export class KnowledgeConfigService {
+export class KnowledgeConfigService extends Service {
     private readonly _knowledgeConfig: RawKnowledgeConfig[] = []
 
-    constructor(private readonly ctx: Context) {}
+    constructor(readonly ctx: Context) {
+        super(ctx, 'chatluna_knowledge_config')
+    }
 
     async loadAllConfig() {
         await this._checkConfigDir()
@@ -223,15 +225,15 @@ export class KnowledgeConfigService {
     }
 }
 
-export class KnowledgeService {
+export class KnowledgeService extends Service {
     private _vectorStores: Record<string, VectorStore> = {}
     private _loader: DefaultDocumentLoader
 
     constructor(
-        private readonly ctx: Context,
-        private readonly config: Config,
-        private readonly configService: KnowledgeConfigService
+        readonly ctx: Context,
+        config: Config
     ) {
+        super(ctx, 'chatluna_knowledge')
         defineDatabase(ctx)
 
         ctx.on('dispose', async () => {

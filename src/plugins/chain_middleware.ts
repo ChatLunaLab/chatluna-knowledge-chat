@@ -4,7 +4,7 @@ import {
     ChatChain
 } from 'koishi-plugin-chatluna/lib/chains/chain'
 import { Context, h, Session } from 'koishi'
-import { Config, knowledgeConfigService } from '..'
+import { Config } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
 import type {} from 'koishi-plugin-chatluna/lib/middlewares/resolve_room'
 import { setRoomKnowledgeConfig } from './command'
@@ -71,7 +71,6 @@ async function knowledgeConfigMiddleware(
 
     await setRoomKnowledgeConfig(
         ctx,
-        knowledgeConfigService,
         room.conversationId,
         middlewareContext.options.knowledge_config
     )

@@ -5,8 +5,6 @@ import { plugins } from './plugin'
 import { KnowledgeConfigService, KnowledgeService } from './service/knowledge'
 import { createLogger } from 'koishi-plugin-chatluna/lib/utils/logger'
 
-export let knowledgeConfigService: KnowledgeConfigService
-export let knowledgeService: KnowledgeService
 export let logger: Logger
 
 export function apply(ctx: Context, config: Config) {
@@ -14,24 +12,37 @@ export function apply(ctx: Context, config: Config) {
     logger = createLogger(ctx, 'chatluna-knowledge-chat')
 
     ctx.on('ready', async () => {
-        knowledgeConfigService = new KnowledgeConfigService(ctx)
-        knowledgeService = new KnowledgeService(
-            ctx,
-            config,
-            knowledgeConfigService
-        )
-
         await plugin.registerToService()
 
-        await knowledgeConfigService.loadAllConfig()
-        await knowledgeService.loader.init()
+        ctx.plugin(KnowledgeConfigService)
+        ctx.plugin(KnowledgeService, config)
+    })
+
+    const pluginEntryPoint = async (ctx: Context) => {
+        await ctx.chatluna_knowledge_config.loadAllConfig()
+        await ctx.chatluna_knowledge.loader.init()
 
         await plugins(ctx, plugin, config)
-    })
+    }
 
-    ctx.on('dispose', async () => {
-        knowledgeConfigService = null
-    })
+    ctx.plugin(
+        {
+            apply: async (ctx: Context, config: Config) => {
+                ctx.on('ready', async () => {
+                    await pluginEntryPoint(ctx)
+                })
+            },
+            inject: {
+                required: [
+                    'chatluna',
+                    'chatluna_knowledge',
+                    'chatluna_knowledge_config'
+                ]
+            },
+            name: 'chatluna_knowledge_entry_point'
+        },
+        config
+    )
 }
 
 export const name = '@dingyi222666/chathub-knowledge-chat'

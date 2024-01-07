@@ -5,16 +5,16 @@ import {
     BaseChain,
     ChainInputs,
     loadQAChain,
-    QAChainParams,
-    SerializedChatVectorDBQAChain
+    QAChainParams
 } from 'langchain/chains'
+import { ChainValues } from '@langchain/core/utils/types'
 import { ContextualCompressionRetriever } from 'langchain/retrievers/contextual_compression'
-import { BaseRetriever } from 'langchain/schema/retriever'
-import { PromptTemplate } from 'langchain/prompts'
-import { BaseMessage, ChainValues } from 'langchain/schema'
+import { BaseRetriever } from '@langchain/core/retrievers'
+import { PromptTemplate } from '@langchain/core/prompts'
+import { BaseMessage } from '@langchain/core/messages'
 import { LLMChainExtractor } from 'langchain/retrievers/document_compressors/chain_extract'
-import { BaseOutputParser } from 'langchain/schema/output_parser'
 import { cropDocuments } from '../prompts/util'
+import { BaseOutputParser } from '@langchain/core/output_parsers'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LoadValues = Record<string, any>
@@ -34,7 +34,10 @@ export interface ConversationalContextualCompressionRetrievalQAChainInput
 }
 
 export class ConversationalContextualCompressionRetrievalQAChain
-    extends BaseChain
+    extends BaseChain<
+        ChainValues,
+        ChainValues & { sourceDocuments?: Document[] }
+    >
     implements ConversationalContextualCompressionRetrievalQAChainInput
 {
     // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -124,10 +127,7 @@ export class ConversationalContextualCompressionRetrievalQAChain
     }
 
     /** @ignore */
-    async _call(
-        values: ChainValues,
-        runManager?: CallbackManagerForChainRun
-    ): Promise<ChainValues> {
+    async _call(values: ChainValues, runManager?: CallbackManagerForChainRun) {
         if (!(this.inputKey in values)) {
             throw new Error(`Question key ${this.inputKey} not found.`)
         }
@@ -177,17 +177,6 @@ export class ConversationalContextualCompressionRetrievalQAChain
 
     _chainType(): string {
         return 'conversational_fa_retrieval_chain'
-    }
-
-    static async deserialize(
-        _data: SerializedChatVectorDBQAChain,
-        _values: LoadValues
-    ): Promise<ConversationalContextualCompressionRetrievalQAChain> {
-        throw new Error('Not implemented.')
-    }
-
-    serialize(): SerializedChatVectorDBQAChain {
-        throw new Error('Not implemented.')
     }
 
     static fromLLM(
@@ -256,7 +245,7 @@ function getDefaultChainPrompt(): PromptTemplate {
 class NoOutputParser extends BaseOutputParser<string> {
     // eslint-disable-next-line @typescript-eslint/naming-convention
     lc_namespace = [
-        'langchain',
+        '@langchain/core/messages',
         'retrievers',
         'document_compressors',
         'chain_extract'
