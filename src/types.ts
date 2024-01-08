@@ -1,7 +1,7 @@
 import { SystemPrompts } from 'koishi-plugin-chatluna/lib/llm-core/chain/base'
 import { ChatLunaChatModel } from 'koishi-plugin-chatluna/lib/llm-core/platform/model'
 import { BasePromptTemplate } from '@langchain/core/prompts'
-import { VectorStore, VectorStoreRetriever } from 'langchain/vectorstores/base'
+import { VectorStore, VectorStoreRetriever } from '@langchain/core/vectorstores'
 
 export interface RawKnowledgeConfig {
     query?: RawKnowledgeConfigQuery[]

@@ -1,6 +1,6 @@
-import { VectorStore, VectorStoreRetriever } from 'langchain/vectorstores/base'
+import { VectorStore, VectorStoreRetriever } from '@langchain/core/vectorstores'
 import { MultiVectorStoreRetrieverInput } from './types'
-import { Document } from 'langchain/document'
+import { Document } from '@langchain/core/documents'
 import {
     ChatLunaError,
     ChatLunaErrorCode

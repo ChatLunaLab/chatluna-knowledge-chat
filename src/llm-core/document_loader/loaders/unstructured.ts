@@ -1,4 +1,4 @@
-import { Document } from 'langchain/document'
+import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
 import { UnstructuredLoader } from 'langchain/document_loaders/fs/unstructured'
 

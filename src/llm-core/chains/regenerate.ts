@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 import { SystemPrompts } from 'koishi-plugin-chatluna/lib/llm-core/chain/base'
 import { ChatLunaChatModel } from 'koishi-plugin-chatluna/lib/llm-core/platform/model'
-import { CallbackManagerForChainRun } from 'langchain/callbacks'
+import { CallbackManagerForChainRun } from '@langchain/core/callbacks/manager'
 import {
     BaseChain,
     ChainInputs,
@@ -11,7 +11,8 @@ import {
 } from 'langchain/chains'
 import { BaseRetriever } from '@langchain/core/retrievers'
 import { PromptTemplate } from '@langchain/core/prompts'
-import { BaseMessage, ChainValues } from 'langchain/schema'
+import { ChainValues } from '@langchain/core/utils/types'
+import { BaseMessage } from '@langchain/core/messages'
 import { cropDocuments } from '../prompts/util'
 
 // eslint-disable-next-line @typescript-eslint/naming-convention

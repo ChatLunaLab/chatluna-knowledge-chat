@@ -3,7 +3,7 @@ import { DocumentLoader, DocumentLoaderFields } from './types'
 import { Config } from '../..'
 import path from 'path'
 import fs from 'fs/promises'
-import { Document } from 'langchain/document'
+import { Document } from '@langchain/core/documents'
 import {
     ChatLunaError,
     ChatLunaErrorCode

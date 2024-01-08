@@ -1,7 +1,7 @@
 import { Context, Schema, Service } from 'koishi'
 import { parseRawModelName } from 'koishi-plugin-chatluna/lib/llm-core/utils/count_tokens'
 import path from 'path'
-import { Document } from 'langchain/document'
+import { Document } from '@langchain/core/documents'
 import fs from 'fs/promises'
 import { load } from 'js-yaml'
 import {
@@ -13,7 +13,7 @@ import {
     ChatLunaError,
     ChatLunaErrorCode
 } from 'koishi-plugin-chatluna/lib/utils/error'
-import { VectorStore } from 'langchain/vectorstores/base'
+import { VectorStore } from '@langchain/core/vectorstores'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
 import { Config, logger } from '..'
 import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/lib/llm-core/model/base'

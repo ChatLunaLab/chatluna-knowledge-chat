@@ -1,5 +1,5 @@
 import { Context } from 'koishi'
-import { Document } from 'langchain/document'
+import { Document } from '@langchain/core/documents'
 import { Config } from '../..'
 
 export abstract class DocumentLoader {
