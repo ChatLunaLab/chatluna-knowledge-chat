@@ -2,6 +2,7 @@ import { ChatChain } from 'koishi-plugin-chatluna/lib/chains/chain'
 import { Context } from 'koishi'
 import { Config } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
+import {} from 'koishi-plugin-chatluna/lib/llm-core/memory/message/database_history'
 import path from 'path'
 import fs from 'fs/promises'
 import {
