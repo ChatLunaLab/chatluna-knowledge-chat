@@ -93,7 +93,7 @@ export class KnowledgeConfigService extends Service {
             throw new Error(`No config found for keyword ${triggerKeyword}`)
         }
 
-        return null
+        return undefined
     }
 
     async getAllConfig(): Promise<string[]> {
