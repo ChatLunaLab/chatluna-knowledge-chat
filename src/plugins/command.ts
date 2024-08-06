@@ -28,7 +28,12 @@ export async function apply(
             fallback: false
         })
         .action(async ({ options, session }, path) => {
+            if (path.startsWith('http')) {
+                return `目前暂不支持 url：${path}`
+            }
+
             path = await copyDocument(ctx, path, options.copy)
+
             const loader = ctx.chatluna_knowledge.loader
 
             const supported = await loader.support(path)
@@ -149,18 +154,20 @@ export async function setRoomKnowledgeConfig(
 }
 
 async function deleteDocument(ctx: Context, filePath: string, db: string) {
-    try {
-        await fs.access(filePath)
-    } catch (e) {
-        filePath = path.resolve(
-            ctx.baseDir,
-            'data/chathub/knowledge/data',
-            filePath
-        )
-    }
+    if (!filePath.startsWith('http')) {
+        try {
+            await fs.access(filePath)
+        } catch (e) {
+            filePath = path.resolve(
+                ctx.baseDir,
+                'data/chathub/knowledge/data',
+                filePath
+            )
+        }
 
-    if (filePath.startsWith(ctx.baseDir)) {
-        await fs.rm(filePath, { recursive: true })
+        if (filePath.startsWith(ctx.baseDir)) {
+            await fs.rm(filePath, { recursive: true })
+        }
     }
 
     await ctx.chatluna_knowledge.deleteDocument(filePath, db)

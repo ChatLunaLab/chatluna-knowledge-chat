@@ -385,7 +385,11 @@ export class KnowledgeService extends Service {
 
         const vectorStore = await this.createVectorStore(config)
 
-        await vectorStore.addDocuments(documents)
+        const chunkDocuments = chunkArray(documents, 40)
+
+        for (const chunk of chunkDocuments) {
+            await vectorStore.addDocuments(chunk)
+        }
 
         if (vectorStore instanceof ChatLunaSaveableVectorStore) {
             await vectorStore.save()
@@ -425,4 +429,22 @@ export function loadKnowledgeConfig(text: string) {
     }
 
     return config
+}
+
+function chunkArray<T>(array: T[], chunkSize: number): T[][] {
+    const result: T[][] = []
+    let startIndex = 0
+
+    try {
+        while (startIndex < array.length) {
+            // 直接使用下标构建子数组
+            const endIndex = Math.min(startIndex + chunkSize, array.length)
+            result.push(array.slice(startIndex, endIndex))
+            startIndex += chunkSize
+        }
+    } catch (error) {
+        console.error('An error occurred:', error)
+    }
+
+    return result
 }

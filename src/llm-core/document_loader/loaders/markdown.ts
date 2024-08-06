@@ -1,7 +1,7 @@
 import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
 import { TextLoader } from 'langchain/document_loaders/fs/text'
-export default class TextDocumentLoader extends DocumentLoader {
+export default class MarkdownLoader extends DocumentLoader {
     public load(
         path: string,
         fields: DocumentLoaderFields

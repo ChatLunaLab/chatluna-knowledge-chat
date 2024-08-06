@@ -32,8 +32,12 @@ export default class DirectoryLoader extends DocumentLoader {
     }
 
     public async support(path: string): Promise<boolean> {
-        const stat = await fs.stat(path)
+        try {
+            const stat = await fs.stat(path)
 
-        return stat.isDirectory()
+            return stat.isDirectory()
+        } catch (e) {
+            return false
+        }
     }
 }

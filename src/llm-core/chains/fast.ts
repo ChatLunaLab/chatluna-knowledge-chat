@@ -156,6 +156,7 @@ export class ConversationalFastRetrievalQAChain
             inputs,
             runManager?.getChild('combine_documents')
         )
+
         if (this.returnSourceDocuments) {
             return {
                 ...result,

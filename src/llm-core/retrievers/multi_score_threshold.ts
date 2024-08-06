@@ -72,7 +72,7 @@ export class MultiScoreThresholdRetriever<
             currentSearchK < currentMaxK
         )
 
-        console.log(filteredResults)
+        // console.log(filteredResults)
         return filteredResults
             .map((documents) => documents[0])
             .slice(0, this.maxK)

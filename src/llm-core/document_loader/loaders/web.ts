@@ -15,7 +15,7 @@ export default class WebLoader extends DocumentLoader {
     }
 
     public async support(path: string): Promise<boolean> {
-        // start with (http|https)://
-        return /^(http|https):\/\//.test(path)
+        const supported = /^(http|https):\/\//i.test(path)
+        return supported
     }
 }

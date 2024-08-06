@@ -14,6 +14,7 @@ import DirectoryLoader from './loaders/directory'
 import DocXDocumentLoader from './loaders/doc'
 import UnstructuredDocumentLoader from './loaders/unstructured'
 import PDFDocumentLoader from './loaders/pdf'
+import WebLoader from './loaders/web'
 export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []
     private _supportLoaders: Record<string, DocumentLoader> = {}
@@ -88,12 +89,20 @@ export class DefaultDocumentLoader extends DocumentLoader {
             (ctx: Context, config: Config, parent?: DocumentLoader) =>
                 new DocXDocumentLoader(ctx, config, parent),
             (ctx: Context, config: Config, parent?: DocumentLoader) =>
-                new UnstructuredDocumentLoader(ctx, config, parent),
+                new PDFDocumentLoader(ctx, config, parent),
             (ctx: Context, config: Config, parent?: DocumentLoader) =>
-                new PDFDocumentLoader(ctx, config, parent)
+                new WebLoader(ctx, config, parent)
         ]
+
+        if (this.config.unstructuredApiKey?.length > 0) {
+            loaders.push(
+                (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                    new UnstructuredDocumentLoader(ctx, config, parent)
+            )
+        }
+
         for (const loader of loaders) {
-            this._loaders.push(loader.call(this.ctx, this.config, this))
+            this._loaders.push(loader(this.ctx, this.config, this))
         }
     }
 }
