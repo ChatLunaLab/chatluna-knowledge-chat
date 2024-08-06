@@ -43,7 +43,7 @@ export function apply(ctx: Context, config: Config) {
     )
 }
 
-export const name = '@dingyi222666/chathub-knowledge-chat'
+export const name = 'chathub-knowledge-chat'
 
 export interface Config extends ChatLunaPlugin.Config {
     defaultConfig: string

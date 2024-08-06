@@ -23,6 +23,8 @@ export default class TextDocumentLoader extends DocumentLoader {
             case 'ts':
             case 'kt':
             case 'lua':
+            case 'md':
+                return true
             default:
                 return false
         }
