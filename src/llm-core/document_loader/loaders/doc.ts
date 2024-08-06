@@ -1,6 +1,6 @@
 import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
-import { DocxLoader } from 'langchain/document_loaders/fs/docx'
+import { DocxLoader } from '@langchain/community/document_loaders/fs/docx'
 
 export default class DocXDocumentLoader extends DocumentLoader {
     public load(

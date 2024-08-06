@@ -13,7 +13,7 @@ export default class DirectoryLoader extends DocumentLoader {
             await fs.readdir(filePath, { withFileTypes: true, recursive: true })
         )
             .filter((value) => value.isFile())
-            .map((value) => path.join(value.path, value.name))
+            .map((value) => path.join(value.parentPath, value.name))
 
         let result: Document[] = []
 

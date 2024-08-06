@@ -1,6 +1,6 @@
 import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
-import { UnstructuredLoader } from 'langchain/document_loaders/fs/unstructured'
+import { UnstructuredLoader } from '@langchain/community/document_loaders/fs/unstructured'
 
 export default class UnstructuredDocumentLoader extends DocumentLoader {
     public load(

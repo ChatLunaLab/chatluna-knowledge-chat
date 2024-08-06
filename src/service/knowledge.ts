@@ -18,6 +18,7 @@ import { DefaultDocumentLoader } from '../llm-core/document_loader'
 import { Config, logger } from '..'
 import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/llm-core/model/base'
 import { randomUUID } from 'crypto'
+import { fileURLToPath } from 'url'
 
 export class KnowledgeConfigService extends Service {
     private readonly _knowledgeConfig: RawKnowledgeConfig[] = []
@@ -207,7 +208,10 @@ export class KnowledgeConfigService extends Service {
     private async _copyDefaultConfig() {
         const currentPresetDir = path.join(this.resolveConfigDir())
 
-        const defaultPresetDir = path.join(__dirname, '../../resources')
+        const dirname =
+            __dirname?.length > 0 ? __dirname : fileURLToPath(import.meta.url)
+
+        const defaultPresetDir = path.join(dirname, '../resources')
 
         const files = await fs.readdir(defaultPresetDir)
 
@@ -393,6 +397,8 @@ export class KnowledgeService extends Service {
     public get loader() {
         return this._loader
     }
+
+    static inject = ['database']
 }
 
 function defineDatabase(ctx: Context) {

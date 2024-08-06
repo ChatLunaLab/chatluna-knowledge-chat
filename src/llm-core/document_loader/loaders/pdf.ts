@@ -1,6 +1,6 @@
 import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
-import { PDFLoader } from 'langchain/document_loaders/fs/pdf'
+import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
 
 export default class PDFDocumentLoader extends DocumentLoader {
     public load(

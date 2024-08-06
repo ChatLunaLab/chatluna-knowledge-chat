@@ -1,6 +1,6 @@
 import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
-import { CSVLoader } from 'langchain/document_loaders/fs/csv'
+import { CSVLoader } from '@langchain/community/document_loaders/fs/csv'
 export default class CSVDocumentLoader extends DocumentLoader {
     public load(
         path: string,

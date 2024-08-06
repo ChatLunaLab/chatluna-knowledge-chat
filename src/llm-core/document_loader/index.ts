@@ -1,14 +1,19 @@
 import { Context } from 'koishi'
 import { DocumentLoader, DocumentLoaderFields } from './types'
 import { Config } from '../..'
-import path from 'path'
-import fs from 'fs/promises'
 import { Document } from '@langchain/core/documents'
 import {
     ChatLunaError,
     ChatLunaErrorCode
 } from 'koishi-plugin-chatluna/utils/error'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
+import JsonLoader from './loaders/json'
+import TextDocumentLoader from './loaders/text'
+import CSVDocumentLoader from './loaders/csv'
+import DirectoryLoader from './loaders/directory'
+import DocXDocumentLoader from './loaders/doc'
+import UnstructuredDocumentLoader from './loaders/unstructured'
+import PDFDocumentLoader from './loaders/pdf'
 export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []
     private _supportLoaders: Record<string, DocumentLoader> = {}
@@ -71,26 +76,24 @@ export class DefaultDocumentLoader extends DocumentLoader {
     }
 
     async init() {
-        const list = await fs.readdir(path.join(__dirname, 'loaders'))
-
-        for (const file of list) {
-            if (file.endsWith('.d.ts')) {
-                continue
-            }
-
-            const exports = await require(path.join(__dirname, 'loaders', file))
-
-            if (!exports.default) {
-                continue
-            }
-
-            // eslint-disable-next-line new-cap
-            const loader = new exports.default(
-                this.ctx,
-                this.config,
-                this
-            ) as DocumentLoader
-            this._loaders.push(loader)
+        const loaders = [
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new JsonLoader(ctx, config, parent),
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new TextDocumentLoader(ctx, config, parent),
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new CSVDocumentLoader(ctx, config, parent),
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new DirectoryLoader(ctx, config, parent),
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new DocXDocumentLoader(ctx, config, parent),
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new UnstructuredDocumentLoader(ctx, config, parent),
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new PDFDocumentLoader(ctx, config, parent)
+        ]
+        for (const loader of loaders) {
+            this._loaders.push(loader.call(this.ctx, this.config, this))
         }
     }
 }
