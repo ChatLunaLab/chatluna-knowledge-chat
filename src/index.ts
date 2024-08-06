@@ -1,9 +1,9 @@
 import { Context, Logger, Schema } from 'koishi'
 
-import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
+import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 import { plugins } from './plugin'
 import { KnowledgeConfigService, KnowledgeService } from './service/knowledge'
-import { createLogger } from 'koishi-plugin-chatluna/lib/utils/logger'
+import { createLogger } from 'koishi-plugin-chatluna/utils/logger'
 
 export let logger: Logger
 
@@ -32,13 +32,11 @@ export function apply(ctx: Context, config: Config) {
                     await pluginEntryPoint(ctx)
                 })
             },
-            inject: {
-                required: [
-                    'chatluna',
-                    'chatluna_knowledge',
-                    'chatluna_knowledge_config'
-                ]
-            },
+            inject: [
+                'chatluna',
+                'chatluna_knowledge',
+                'chatluna_knowledge_config'
+            ],
             name: 'chatluna_knowledge_entry_point'
         },
         config

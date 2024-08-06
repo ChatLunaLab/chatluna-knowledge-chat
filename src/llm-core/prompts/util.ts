@@ -1,5 +1,5 @@
 import { Document } from '@langchain/core/documents'
-import { ChatLunaChatModel } from 'koishi-plugin-chatluna/lib/llm-core/platform/model'
+import { ChatLunaChatModel } from 'koishi-plugin-chatluna/llm-core/platform/model'
 export async function cropDocuments(
     documents: Document[],
     llm: ChatLunaChatModel

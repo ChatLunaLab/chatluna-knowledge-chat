@@ -1,5 +1,5 @@
 import { Context, Schema, Service } from 'koishi'
-import { parseRawModelName } from 'koishi-plugin-chatluna/lib/llm-core/utils/count_tokens'
+import { parseRawModelName } from 'koishi-plugin-chatluna/llm-core/utils/count_tokens'
 import path from 'path'
 import { Document } from '@langchain/core/documents'
 import fs from 'fs/promises'
@@ -12,11 +12,11 @@ import {
 import {
     ChatLunaError,
     ChatLunaErrorCode
-} from 'koishi-plugin-chatluna/lib/utils/error'
+} from 'koishi-plugin-chatluna/utils/error'
 import { VectorStore } from '@langchain/core/vectorstores'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
 import { Config, logger } from '..'
-import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/lib/llm-core/model/base'
+import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/llm-core/model/base'
 import { randomUUID } from 'crypto'
 
 export class KnowledgeConfigService extends Service {

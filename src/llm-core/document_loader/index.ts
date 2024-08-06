@@ -7,7 +7,7 @@ import { Document } from '@langchain/core/documents'
 import {
     ChatLunaError,
     ChatLunaErrorCode
-} from 'koishi-plugin-chatluna/lib/utils/error'
+} from 'koishi-plugin-chatluna/utils/error'
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter'
 export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []

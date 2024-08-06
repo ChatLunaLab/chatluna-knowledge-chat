@@ -1,5 +1,5 @@
-import { SystemPrompts } from 'koishi-plugin-chatluna/lib/llm-core/chain/base'
-import { ChatLunaChatModel } from 'koishi-plugin-chatluna/lib/llm-core/platform/model'
+import { SystemPrompts } from 'koishi-plugin-chatluna/llm-core/chain/base'
+import { ChatLunaChatModel } from 'koishi-plugin-chatluna/llm-core/platform/model'
 import { CallbackManagerForChainRun } from '@langchain/core/callbacks/manager'
 import {
     BaseChain,

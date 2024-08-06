@@ -1,4 +1,4 @@
-import { Document } from 'langchain/dist/document'
+import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
 import { CheerioWebBaseLoader } from 'langchain/document_loaders/web/cheerio'
 

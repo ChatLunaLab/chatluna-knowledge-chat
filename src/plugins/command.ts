@@ -1,15 +1,15 @@
-import { ChatChain } from 'koishi-plugin-chatluna/lib/chains/chain'
+import { ChatChain } from 'koishi-plugin-chatluna/chains'
 import { Context } from 'koishi'
 import { Config } from '..'
-import { ChatLunaPlugin } from 'koishi-plugin-chatluna/lib/services/chat'
-import {} from 'koishi-plugin-chatluna/lib/llm-core/memory/message/database_history'
+import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 import path from 'path'
 import fs from 'fs/promises'
 import {
     ChatLunaError,
     ChatLunaErrorCode
-} from 'koishi-plugin-chatluna/lib/utils/error'
-import { Pagination } from 'koishi-plugin-chatluna/lib/utils/pagination'
+} from 'koishi-plugin-chatluna/utils/error'
+import type {} from 'koishi-plugin-chatluna/llm-core/memory/message'
+import { Pagination } from 'koishi-plugin-chatluna/utils/pagination'
 
 import { DocumentConfig } from '../types'
 

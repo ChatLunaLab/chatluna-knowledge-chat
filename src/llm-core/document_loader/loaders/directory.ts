@@ -1,4 +1,4 @@
-import { Document } from 'langchain/dist/document'
+import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
 import fs from 'fs/promises'
 import { logger } from '../../..'
