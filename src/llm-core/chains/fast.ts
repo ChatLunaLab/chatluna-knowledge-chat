@@ -140,7 +140,7 @@ export class ConversationalFastRetrievalQAChain
             )
         const newQuestion = question
         const docs = await cropDocuments(
-            await this.retriever.getRelevantDocuments(
+            await this.retriever.invoke(
                 newQuestion,
                 runManager?.getChild('retriever')
             ),
@@ -152,7 +152,7 @@ export class ConversationalFastRetrievalQAChain
             input_documents: docs,
             chat_history: chatHistory
         }
-        const result = await this.combineDocumentsChain.call(
+        const result = await this.combineDocumentsChain.invoke(
             inputs,
             runManager?.getChild('combine_documents')
         )

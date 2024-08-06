@@ -131,7 +131,7 @@ export class KnowledgeConfigService extends Service {
                 (file) => file.isFile() || file.isSymbolicLink()
             )
 
-            return files.map((file) => path.join(file.path, file.name))
+            return files.map((file) => path.join(file.parentPath, file.name))
         } catch (err) {
             logger.error(err)
             return []
