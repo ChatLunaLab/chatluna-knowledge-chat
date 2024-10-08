@@ -11,6 +11,8 @@ import { DefaultDocumentLoader } from '../llm-core/document_loader'
 import { Config, logger } from '..'
 import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/llm-core/model/base'
 import { randomUUID } from 'crypto'
+import path from 'path'
+import fs from 'fs/promises'
 
 export class KnowledgeService extends Service {
     private _vectorStores: Record<string, VectorStore> = {}
@@ -23,8 +25,19 @@ export class KnowledgeService extends Service {
         super(ctx, 'chatluna_knowledge')
         defineDatabase(ctx)
 
+        const knowledgeDir = path.join(
+            ctx.baseDir,
+            'data/chathub/knowledge/default'
+        )
+
         ctx.on('dispose', async () => {
             this._vectorStores = {}
+
+            try {
+                await fs.access(knowledgeDir)
+            } catch (error) {
+                await fs.mkdir(knowledgeDir, { recursive: true })
+            }
         })
 
         this._loader = new DefaultDocumentLoader(ctx, config)

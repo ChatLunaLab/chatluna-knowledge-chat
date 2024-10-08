@@ -4,8 +4,9 @@ import { Config } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 import type {} from 'koishi-plugin-chatluna/llm-core/memory/message'
 import { Pagination } from 'koishi-plugin-chatluna/utils/pagination'
-
+import fs from 'fs/promises'
 import { DocumentConfig } from '../types'
+import path from 'path'
 
 export async function apply(
     ctx: Context,
@@ -39,6 +40,59 @@ export async function apply(
             await ctx.chatluna_knowledge.uploadDocument(documents, path)
 
             return `已成功上传到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
+        })
+
+    ctx.command('chatluna.knowledge.init', '从默认文件夹初始化知识库')
+        .option('size', '-s --size <value:number> 文本块的切割大小（字符）')
+        .option('overlap', '-o --overlap <value:number> 文件路径')
+        .action(async ({ options, session }) => {
+            const loader = ctx.chatluna_knowledge.loader
+
+            const load = async (path: string) => {
+                const supported = await loader.support(path)
+
+                if (!supported) {
+                    ctx.logger.warn(`不支持的文件类型：${path}`)
+                    return false
+                }
+
+                const documents = await loader.load(path, {
+                    chunkOverlap: options.overlap ?? config.chunkOverlap,
+                    chunkSize: options.size ?? config.chunkSize
+                })
+
+                ctx.logger.info(
+                    `已对 ${path} 解析成 ${documents.length} 个文档块。正在保存至数据库`
+                )
+
+                await ctx.chatluna_knowledge.uploadDocument(documents, path)
+
+                ctx.logger.info(
+                    `已成功上传到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
+                )
+
+                return true
+            }
+
+            const knowledgeDir = path.join(
+                ctx.baseDir,
+                'data/chathub/knowledge/default'
+            )
+
+            const files = await fs.readdir(knowledgeDir)
+
+            const successPaths: string[] = []
+            for (const file of files) {
+                const filePath = path.join(knowledgeDir, file)
+
+                const result = await load(filePath)
+
+                if (result) {
+                    successPaths.push(filePath)
+                }
+            }
+
+            return `已成功上传 ${successPaths.length} / ${files.length} 个文档到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
         })
 
     ctx.command('chatluna.knowledge.delete [path:string]', '删除资料')
