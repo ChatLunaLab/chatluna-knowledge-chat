@@ -40,6 +40,9 @@ export class KnowledgeService extends Service {
             } catch (error) {
                 await fs.mkdir(knowledgeDir, { recursive: true })
             }
+
+            // list all documents to trigger the event
+            await this.listDocument()
         })
 
         this._loader = new DefaultDocumentLoader(ctx, config)
@@ -127,6 +130,8 @@ export class KnowledgeService extends Service {
         await this.ctx.database.remove('chathub_knowledge', {
             path
         })
+
+        this.ctx.emit('chatluna-knowledge/delete', path)
     }
 
     async loadConfig(rawConfig: RawKnowledgeConfig) {
@@ -159,7 +164,11 @@ export class KnowledgeService extends Service {
             })
         }
 
-        return selection.execute()
+        const result = await selection.execute()
+
+        this.ctx.emit('chatluna-knowledge/list', result)
+
+        return result
     }
 
     public async uploadDocument(documents: Document[], path: string) {
@@ -194,6 +203,8 @@ export class KnowledgeService extends Service {
         }
 
         this.ctx.database.upsert('chathub_knowledge', [config])
+
+        this.ctx.emit('chatluna-knowledge/upload', documents, path)
     }
 
     getChain(type: string) {
@@ -243,4 +254,15 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
     }
 
     return result
+}
+
+declare module 'koishi' {
+    interface Events {
+        'chatluna-knowledge/list': (config: DocumentConfig[]) => void
+        'chatluna-knowledge/upload': (
+            documents: Document[],
+            path: string
+        ) => void
+        'chatluna-knowledge/delete': (path: string) => void
+    }
 }
