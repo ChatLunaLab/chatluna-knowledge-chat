@@ -144,19 +144,17 @@ export class KnowledgeService extends Service {
 
         const result = await selection.execute()
 
-        this.ctx.emit('chatluna-knowledge/list', result)
-
         return result
     }
 
     public async uploadDocument(
         documents: Document[],
-        path: string,
+        filePath: string,
         name?: string
     ) {
         const existsDocument = await this.ctx.database.get(
             'chathub_knowledge',
-            { path }
+            { path: filePath }
         )
 
         if (existsDocument.length > 0) {
@@ -165,10 +163,10 @@ export class KnowledgeService extends Service {
 
         const id = randomUUID()
 
-        name = name ?? path.split('/').pop()
+        name = name ?? this.extractNameFromPath(filePath)
 
         const config: DocumentConfig = {
-            path,
+            path: filePath,
             id,
             name,
             vector_storage: this.ctx.chatluna.config.defaultVectorStore,
@@ -177,7 +175,7 @@ export class KnowledgeService extends Service {
 
         const vectorStore = await this.createVectorStore(config)
 
-        const chunkDocuments = chunkArray(documents, 40)
+        const chunkDocuments = chunkArray(documents, 60)
 
         for (const chunk of chunkDocuments) {
             await vectorStore.addDocuments(chunk)
@@ -189,7 +187,16 @@ export class KnowledgeService extends Service {
 
         this.ctx.database.upsert('chathub_knowledge', [config])
 
-        this.ctx.emit('chatluna-knowledge/upload', documents, path)
+        this.ctx.emit('chatluna-knowledge/upload', documents, filePath)
+    }
+
+    private extractNameFromPath(filePath: string): string {
+        // 移除开头的 http:// 或 https://
+        const cleanPath = filePath.replace(/^(https?:\/\/)/, '')
+
+        // 分割路径并获取最后一个元素
+        const parts = cleanPath.split(/[/\\]/)
+        return parts[parts.length - 1] || 'unknown'
     }
 
     getChain(type: string) {
@@ -219,7 +226,7 @@ function defineDatabase(ctx: Context) {
         },
         {
             autoInc: false,
-            primary: ['path']
+            primary: ['path', 'name']
         }
     )
 }
@@ -244,7 +251,6 @@ function chunkArray<T>(array: T[], chunkSize: number): T[][] {
 
 declare module 'koishi' {
     interface Events {
-        'chatluna-knowledge/list': (config: DocumentConfig[]) => void
         'chatluna-knowledge/upload': (
             documents: Document[],
             path: string

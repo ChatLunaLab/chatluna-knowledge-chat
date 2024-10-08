@@ -20,10 +20,6 @@ export async function apply(
         updateConfig()
     })
 
-    ctx.on('chatluna-knowledge/list', async (data) => {
-        updateConfig()
-    })
-
     async function updateConfig() {
         const documents = await ctx.chatluna_knowledge.listDocument(
             ctx.chatluna.config.defaultVectorStore
@@ -32,7 +28,9 @@ export async function apply(
         ctx.schema.set(
             'knowledge',
             Schema.union(
-                documents.map((document) => Schema.const(document.name))
+                documents
+                    .map((document) => Schema.const(document.name))
+                    .concat(Schema.const('无'))
             )
         )
     }
@@ -47,8 +45,7 @@ export async function apply(
 
     ctx.schema.set('model', Schema.union(getModelNames(ctx.chatluna.platform)))
 
-    // list all documents to trigger the event
-    await this.listDocument()
+    updateConfig()
 }
 
 function getModelNames(service: PlatformService) {
