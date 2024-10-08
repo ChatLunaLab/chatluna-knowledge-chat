@@ -2,7 +2,7 @@ import { Context, Logger, Schema } from 'koishi'
 
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 import { plugins } from './plugin'
-import { KnowledgeConfigService, KnowledgeService } from './service/knowledge'
+import { KnowledgeService } from './service/knowledge'
 import { createLogger } from 'koishi-plugin-chatluna/utils/logger'
 
 export let logger: Logger
@@ -12,14 +12,12 @@ export function apply(ctx: Context, config: Config) {
     logger = createLogger(ctx, 'chatluna-knowledge-chat')
 
     ctx.on('ready', async () => {
-        await plugin.registerToService()
+        plugin.registerToService()
 
-        ctx.plugin(KnowledgeConfigService)
         ctx.plugin(KnowledgeService, config)
     })
 
     const pluginEntryPoint = async (ctx: Context) => {
-        await ctx.chatluna_knowledge_config.loadAllConfig()
         await ctx.chatluna_knowledge.loader.init()
 
         await plugins(ctx, plugin, config)
@@ -46,7 +44,7 @@ export function apply(ctx: Context, config: Config) {
 export const name = 'chathub-knowledge-chat'
 
 export interface Config extends ChatLunaPlugin.Config {
-    defaultConfig: string
+    defaultKnowledge: string
     chunkSize: number
     chunkOverlap: number
     minSimilarityScore: number
@@ -57,9 +55,8 @@ export interface Config extends ChatLunaPlugin.Config {
 
 export const Config = Schema.intersect([
     Schema.object({
-        defaultConfig: Schema.dynamic('knowledge-config')
-            .default('default')
-            .description('默认的知识库配置文件'),
+        defaultKnowledge:
+            Schema.dynamic('knowledge-config').description('默认的知识库 ID'),
         chunkSize: Schema.number()
             .default(500)
             .max(2000)
