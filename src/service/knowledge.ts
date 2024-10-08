@@ -183,9 +183,12 @@ export class KnowledgeService extends Service {
 
         const id = randomUUID()
 
+        const name = path.split('/').pop()
+
         const config: DocumentConfig = {
             path,
             id,
+            name,
             vector_storage: this.ctx.chatluna.config.defaultVectorStore,
             embeddings: this.ctx.chatluna.config.defaultEmbeddings
         }
@@ -229,7 +232,8 @@ function defineDatabase(ctx: Context) {
             path: { type: 'string', length: 254 },
             id: { type: 'string', length: 254 },
             vector_storage: { type: 'string', length: 254 },
-            embeddings: { type: 'string', length: 254 }
+            embeddings: { type: 'string', length: 254 },
+            name: { type: 'string', length: 254 }
         },
         {
             autoInc: false,

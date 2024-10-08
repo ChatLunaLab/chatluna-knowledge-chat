@@ -19,6 +19,7 @@ export type RawKnowledgeConfigQuery =
 export interface DocumentConfig {
     path: string
     id: string
+    name: string
     vector_storage: string
     embeddings: string
 }
