@@ -46,6 +46,7 @@ export const name = 'chathub-knowledge-chat'
 export interface Config extends ChatLunaPlugin.Config {
     defaultKnowledge: string
     chunkSize: number
+    model: string
     chunkOverlap: number
     minSimilarityScore: number
     mode: 'default' | 'regenerate' | 'contextual-compression'
@@ -57,6 +58,7 @@ export const Config = Schema.intersect([
     Schema.object({
         defaultKnowledge:
             Schema.dynamic('knowledge-config').description('默认的知识库 ID'),
+        model: Schema.dynamic('model').description('运行知识库的模型'),
         chunkSize: Schema.number()
             .default(500)
             .max(2000)
