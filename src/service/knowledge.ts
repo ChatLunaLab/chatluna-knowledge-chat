@@ -13,10 +13,12 @@ import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/llm-core/mod
 import { randomUUID } from 'crypto'
 import path from 'path'
 import fs from 'fs/promises'
+import { Chain } from '../llm-core/chains/type'
 
 export class KnowledgeService extends Service {
     private _vectorStores: Record<string, VectorStore> = {}
     private _loader: DefaultDocumentLoader
+    private _chains: Record<string, Chain> = {}
 
     constructor(
         readonly ctx: Context,
@@ -194,8 +196,16 @@ export class KnowledgeService extends Service {
         this.ctx.database.upsert('chathub_knowledge', [config])
     }
 
+    getChain(type: string) {
+        return this._chains[type]
+    }
+
     public get loader() {
         return this._loader
+    }
+
+    public get chains() {
+        return this._chains
     }
 
     static inject = ['database']

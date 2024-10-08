@@ -3,6 +3,8 @@ import { ChatLunaChatModel } from 'koishi-plugin-chatluna/llm-core/platform/mode
 import { BaseRetriever } from '@langchain/core/retrievers'
 import { PromptTemplate } from '@langchain/core/prompts'
 import { BaseMessage } from '@langchain/core/messages'
+import { Context } from 'koishi'
+import { Chain } from './type'
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const question_generator_template = `Given the following conversation and a follow up question, rephrase the follow up question to be a standalone question.
@@ -29,7 +31,7 @@ function cropMessages(message: BaseMessage[]) {
         .join('\n')
 }
 
-export function chain(llm: ChatLunaChatModel, baseRetriever: BaseRetriever) {
+function chain(llm: ChatLunaChatModel, baseRetriever: BaseRetriever) {
     const questionGeneratorChainPrompt = PromptTemplate.fromTemplate(
         question_generator_template
     )
@@ -51,4 +53,8 @@ export function chain(llm: ChatLunaChatModel, baseRetriever: BaseRetriever) {
 
         return await baseRetriever.invoke(query)
     }
+}
+
+export function apply(ctx: Context, chains: Record<string, Chain>) {
+    chains['regenerate'] = chain
 }

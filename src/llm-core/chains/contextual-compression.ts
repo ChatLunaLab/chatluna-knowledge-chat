@@ -5,6 +5,8 @@ import { PromptTemplate } from '@langchain/core/prompts'
 import { LLMChainExtractor } from 'langchain/retrievers/document_compressors/chain_extract'
 import { BaseOutputParser } from '@langchain/core/output_parsers'
 import { BaseMessage } from '@langchain/core/messages'
+import { Context } from 'koishi'
+import { Chain } from './type'
 
 function getDefaultChainPrompt(): PromptTemplate {
     const outputParser = new NoOutputParser()
@@ -54,7 +56,11 @@ const PROMPT_TEMPLATE = (
   >>>
   Extracted relevant parts:`
 
-export function chain(llm: ChatLunaChatModel, baseRetriever: BaseRetriever) {
+export function apply(ctx: Context, chains: Record<string, Chain>) {
+    chains['contextual-compression'] = chain
+}
+
+function chain(llm: ChatLunaChatModel, baseRetriever: BaseRetriever) {
     const baseCompressor = LLMChainExtractor.fromLLM(
         llm,
         getDefaultChainPrompt()
