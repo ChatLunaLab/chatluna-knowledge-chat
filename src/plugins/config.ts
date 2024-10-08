@@ -12,16 +12,16 @@ export async function apply(
     plugin: ChatLunaPlugin,
     chain: ChatChain
 ): Promise<void> {
-    ctx.on('chatluna-knowledge/delete', async (data) => {
-        await updateConfig()
+    ctx.on('chatluna-knowledge/delete', (data) => {
+        updateConfig()
     })
 
-    ctx.on('chatluna-knowledge/upload', async (data) => {
-        await updateConfig()
+    ctx.on('chatluna-knowledge/upload', (data) => {
+        updateConfig()
     })
 
     ctx.on('chatluna-knowledge/list', async (data) => {
-        await updateConfig()
+        updateConfig()
     })
 
     async function updateConfig() {
@@ -30,26 +30,27 @@ export async function apply(
         )
 
         ctx.schema.set(
-            'chatluna_knowledge',
+            'knowledge',
             Schema.union(
                 documents.map((document) => Schema.const(document.name))
             )
         )
-        ctx.on('chatluna/model-added', (service) => {
-            ctx.schema.set('model', Schema.union(getModelNames(service)))
-        })
-
-        ctx.on('chatluna/model-removed', (service) => {
-            ctx.schema.set('model', Schema.union(getModelNames(service)))
-        })
-
-        ctx.schema.set(
-            'model',
-            Schema.union(getModelNames(ctx.chatluna.platform))
-        )
     }
 
-    function getModelNames(service: PlatformService) {
-        return service.getAllModels(ModelType.llm).map((m) => Schema.const(m))
-    }
+    ctx.on('chatluna/model-added', (service) => {
+        ctx.schema.set('model', Schema.union(getModelNames(service)))
+    })
+
+    ctx.on('chatluna/model-removed', (service) => {
+        ctx.schema.set('model', Schema.union(getModelNames(service)))
+    })
+
+    ctx.schema.set('model', Schema.union(getModelNames(ctx.chatluna.platform)))
+
+    // list all documents to trigger the event
+    await this.listDocument()
+}
+
+function getModelNames(service: PlatformService) {
+    return service.getAllModels(ModelType.llm).map((m) => Schema.const(m))
 }

@@ -18,6 +18,7 @@ export async function apply(
 
     ctx.command('chatluna.knowledge.upload <path:string>', '上传资料')
         .option('size', '-s --size <value:number> 文本块的切割大小（字符）')
+        .option('name', '-n --name <value:string> 资料名称')
         .option('overlap', '-o --overlap <value:number> 文件路径')
         .action(async ({ options, session }, path) => {
             const loader = ctx.chatluna_knowledge.loader
@@ -37,7 +38,11 @@ export async function apply(
                 `已对 ${path} 解析成 ${documents.length} 个文档块。正在保存至数据库`
             )
 
-            await ctx.chatluna_knowledge.uploadDocument(documents, path)
+            await ctx.chatluna_knowledge.uploadDocument(
+                documents,
+                path,
+                options.name
+            )
 
             return `已成功上传到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
         })
@@ -118,6 +123,7 @@ export async function apply(
         .option('limit', '-l <limit:number> 每页数量', { fallback: 10 })
         .option('db', '-d --db <string> 数据库名')
         .action(async ({ options, session }) => {
+            console.log('2')
             const pagination = new Pagination<DocumentConfig>({
                 formatItem: (value) => formatDocumentInfo(value),
                 formatString: {
@@ -127,6 +133,7 @@ export async function apply(
                 }
             })
 
+            console.log('1')
             const documents = await ctx.chatluna_knowledge.listDocument(
                 options.db
             )
@@ -138,7 +145,7 @@ export async function apply(
 }
 
 function formatDocumentInfo(document: DocumentConfig) {
-    return document.path
+    return `${document.name} => ${document.path}`
 }
 
 async function deleteDocument(ctx: Context, filePath: string, db: string) {

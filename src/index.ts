@@ -55,7 +55,7 @@ export interface Config extends ChatLunaPlugin.Config {
 export const Config = Schema.intersect([
     Schema.object({
         defaultKnowledge:
-            Schema.dynamic('knowledge-config').description('默认的知识库 ID'),
+            Schema.dynamic('knowledge').description('默认的知识库 ID'),
         model: Schema.dynamic('model').description('运行知识库的模型'),
         chunkSize: Schema.number()
             .default(500)

@@ -1,14 +1,14 @@
 import { Context, Service } from 'koishi'
 import { parseRawModelName } from 'koishi-plugin-chatluna/llm-core/utils/count_tokens'
 import { Document } from '@langchain/core/documents'
-import { DocumentConfig, RawKnowledgeConfig } from '../types'
+import { DocumentConfig } from '../types'
 import {
     ChatLunaError,
     ChatLunaErrorCode
 } from 'koishi-plugin-chatluna/utils/error'
 import { VectorStore } from '@langchain/core/vectorstores'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
-import { Config, logger } from '..'
+import { Config } from '..'
 import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/llm-core/model/base'
 import { randomUUID } from 'crypto'
 import path from 'path'
@@ -34,15 +34,14 @@ export class KnowledgeService extends Service {
 
         ctx.on('dispose', async () => {
             this._vectorStores = {}
+        })
 
+        ctx.on('ready', async () => {
             try {
                 await fs.access(knowledgeDir)
             } catch (error) {
                 await fs.mkdir(knowledgeDir, { recursive: true })
             }
-
-            // list all documents to trigger the event
-            await this.listDocument()
         })
 
         this._loader = new DefaultDocumentLoader(ctx, config)
@@ -134,27 +133,6 @@ export class KnowledgeService extends Service {
         this.ctx.emit('chatluna-knowledge/delete', path)
     }
 
-    async loadConfig(rawConfig: RawKnowledgeConfig) {
-        const queryList = rawConfig.query
-
-        const result: VectorStore[] = []
-
-        for (const query of queryList) {
-            if (typeof query !== 'string') {
-                logger.error(
-                    `The query ${JSON.stringify(query)} is not a string`
-                )
-                continue
-            }
-            logger.info(`Loading knowledge path ${query}`)
-            const vectorStore = await this.loadVectorStore(query)
-
-            result.push(vectorStore)
-        }
-
-        return result
-    }
-
     public async listDocument(db?: string) {
         let selection = this.ctx.database.select('chathub_knowledge')
 
@@ -171,7 +149,11 @@ export class KnowledgeService extends Service {
         return result
     }
 
-    public async uploadDocument(documents: Document[], path: string) {
+    public async uploadDocument(
+        documents: Document[],
+        path: string,
+        name?: string
+    ) {
         const existsDocument = await this.ctx.database.get(
             'chathub_knowledge',
             { path }
@@ -183,7 +165,7 @@ export class KnowledgeService extends Service {
 
         const id = randomUUID()
 
-        const name = path.split('/').pop()
+        name = name ?? path.split('/').pop()
 
         const config: DocumentConfig = {
             path,
