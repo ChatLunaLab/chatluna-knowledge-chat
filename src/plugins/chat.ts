@@ -32,6 +32,10 @@ export async function apply(
             chatInterface,
             chain
         ) => {
+            if (chatInterface.chatMode === 'plugin') {
+                return undefined
+            }
+
             let searchChain: ReturnType<Chain> = cache[conversationId]
 
             if (!searchChain) {
