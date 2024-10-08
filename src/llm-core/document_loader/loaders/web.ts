@@ -8,7 +8,8 @@ export default class WebLoader extends DocumentLoader {
         fields: DocumentLoaderFields
     ): Promise<Document[]> {
         const loader = new CheerioWebBaseLoader(path, {
-            timeout: 1000 * 60 * 2
+            timeout: 1000 * 60 * 2,
+            selector: 'p | span'
         })
 
         return loader.load()
