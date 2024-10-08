@@ -7,7 +7,7 @@ import { apply as applyRegenerate } from './llm-core/chains/regenerate'
 import { apply as applyContextualCompression } from './llm-core/chains/contextual-compression'
 import { Chain } from './llm-core/chains/type'
 
-export async function plugins(
+export async function chains(
     ctx: Context,
     plugin: ChatLunaPlugin,
     config: Config

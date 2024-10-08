@@ -4,6 +4,7 @@ import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 import { plugins } from './plugin'
 import { KnowledgeService } from './service/knowledge'
 import { createLogger } from 'koishi-plugin-chatluna/utils/logger'
+import { chains } from './chains'
 
 export let logger: Logger
 
@@ -21,6 +22,7 @@ export function apply(ctx: Context, config: Config) {
         await ctx.chatluna_knowledge.loader.init()
 
         await plugins(ctx, plugin, config)
+        await chains(ctx, plugin, config)
     }
 
     ctx.plugin(
@@ -30,11 +32,7 @@ export function apply(ctx: Context, config: Config) {
                     await pluginEntryPoint(ctx)
                 })
             },
-            inject: [
-                'chatluna',
-                'chatluna_knowledge',
-                'chatluna_knowledge_config'
-            ],
+            inject: ['chatluna', 'chatluna_knowledge'],
             name: 'chatluna_knowledge_entry_point'
         },
         config
