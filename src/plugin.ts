@@ -2,9 +2,8 @@ import { Context } from 'koishi'
 import { Config } from '.'
 import { ChatChain } from 'koishi-plugin-chatluna/chains'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
-import { apply as applyMiddleware } from './plugins/chain_middleware'
+
 import { apply as applyCommand } from './plugins/command'
-import { apply as applyChatMode } from './plugins/chat_mode'
 
 export async function plugins(
     ctx: Context,
@@ -22,7 +21,7 @@ export async function plugins(
 
     const plugins: Plugin[] =
         // plugin start
-        [applyMiddleware, applyCommand, applyChatMode] // plugin end
+        [applyCommand] // plugin end
 
     for (const apply of plugins) {
         await apply(ctx, config, plugin, chain)
