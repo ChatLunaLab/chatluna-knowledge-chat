@@ -1,6 +1,6 @@
 import { ChatChain } from 'koishi-plugin-chatluna/chains'
 import { Context } from 'koishi'
-import { Config } from '..'
+import { Config, logger } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 import type {} from 'koishi-plugin-chatluna/llm-core/memory/message'
 import { Chain } from '../llm-core/chains/type'
@@ -10,6 +10,10 @@ import { MultiScoreThresholdRetriever } from '../llm-core/retrievers/multi_score
 import { parseRawModelName } from 'koishi-plugin-chatluna/llm-core/utils/count_tokens'
 import { ChatLunaChatModel } from 'koishi-plugin-chatluna/llm-core/platform/model'
 import { ChatInterface } from 'koishi-plugin-chatluna/llm-core/chat/app'
+import {
+    ChatLunaError,
+    ChatLunaErrorCode
+} from 'koishi-plugin-chatluna/utils/error'
 
 export async function apply(
     ctx: Context,
@@ -36,6 +40,11 @@ export async function apply(
                     config,
                     chatInterface
                 )
+
+                if (!searchChain) {
+                    return
+                }
+
                 cache[conversationId] = searchChain
             }
 
@@ -44,7 +53,7 @@ export async function apply(
                 await chatInterface.chatHistory.getMessages()
             )
 
-            ctx.logger.info(`Documents: ${documents}`)
+            logger.debug(`Documents: ${documents}`)
 
             promptVariables['knowledge'] = documents
         }
@@ -61,7 +70,7 @@ async function createSearchChain(
     chatInterface: ChatInterface
 ): Promise<ReturnType<Chain>> {
     const preset = await chatInterface.preset
-    const searchKnowledge = preset.knowledge.knowledge
+    const searchKnowledge = preset.knowledge?.knowledge
     const chatVectorStore = ctx.chatluna.config.defaultVectorStore
     const selectedKnowledge: DocumentConfig[] = []
 
@@ -87,7 +96,12 @@ async function createSearchChain(
         selectedKnowledge.push(...knowledge)
     }
 
-    ctx.logger.info(`Selected knowledge: ${selectedKnowledge}`)
+    if (selectedKnowledge.length === 0) {
+        logger.warn('No knowledge selected')
+        return null
+    } else {
+        logger.debug(`Selected knowledge: ${JSON.stringify(selectedKnowledge)}`)
+    }
 
     const vectorStores = await Promise.all(
         selectedKnowledge.map((knowledge) =>
@@ -97,7 +111,15 @@ async function createSearchChain(
 
     const retriever = createRetriever(ctx, config, vectorStores)
 
-    const [platform, modelName] = parseRawModelName(config.model)
+    if (!config.model) {
+        throw new ChatLunaError(
+            ChatLunaErrorCode.KNOWLEDGE_CONFIG_INVALID,
+            new Error('model is not set')
+        )
+    }
+
+    const [platform, modelName] = parseRawModelName(config?.model)
+
     const model = await ctx.chatluna
         .createChatModel(platform, modelName)
         .then((model) => model as ChatLunaChatModel)

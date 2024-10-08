@@ -32,7 +32,7 @@ export function apply(ctx: Context, config: Config) {
                     await pluginEntryPoint(ctx)
                 })
             },
-            inject: ['chatluna', 'chatluna_knowledge'],
+            inject: ['chatluna', 'chatluna_knowledge', 'database'],
             name: 'chatluna_knowledge_entry_point'
         },
         config
@@ -109,4 +109,10 @@ export const usage = `
 要查看如何配置 docx，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/docx)
 
 要查看如何配置 web 网页，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/web_loaders/web_cheerio)
+
+使用之前用 \`chatluna knowledge upload\` 上传文件到知识库。然后在上面选择那个知识库。
+
+先选择一次无，在选择这个知识库！！！
+
+模型也要选择，随便选一个便宜的模型就行了。
 `
