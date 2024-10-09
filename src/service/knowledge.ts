@@ -22,7 +22,7 @@ export class KnowledgeService extends Service {
 
     constructor(
         readonly ctx: Context,
-        config: Config
+        public config: Config
     ) {
         super(ctx, 'chatluna_knowledge')
         defineDatabase(ctx)

@@ -39,7 +39,9 @@ export function apply(ctx: Context, config: Config) {
     )
 }
 
-export const name = 'chathub-knowledge-chat'
+export const name = 'chatluna-knowledge-chat'
+export * from './service/types'
+export * from './service/knowledge'
 
 export interface Config extends ChatLunaPlugin.Config {
     defaultKnowledge: string
