@@ -14,6 +14,7 @@ import { randomUUID } from 'crypto'
 import path from 'path'
 import fs from 'fs/promises'
 import { Chain } from '../llm-core/chains/type'
+import { MultiScoreThresholdRetriever } from '../llm-core/retrievers/multi_score_threshold'
 
 export class KnowledgeService extends Service {
     private _vectorStores: Record<string, VectorStore> = {}
@@ -209,6 +210,12 @@ export class KnowledgeService extends Service {
 
     public get chains() {
         return this._chains
+    }
+
+    public createRetriever(vectorStores: VectorStore[]) {
+        return MultiScoreThresholdRetriever.fromVectorStores(vectorStores, {
+            minSimilarityScore: this.config.minSimilarityScore
+        })
     }
 
     static inject = ['database']
