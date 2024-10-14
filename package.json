@@ -1,101 +1,101 @@
 {
-    "name": "koishi-plugin-chatluna-knowledge-chat",
-    "description": "Use large language models for knowledge Q&A",
-    "version": "1.0.13",
-    "main": "lib/index.cjs",
-    "module": "lib/index.mjs",
-    "typings": "lib/index.d.ts",
-    "exports": {
-        ".": {
-            "types": "./lib/index.d.ts",
-            "import": "./lib/index.mjs",
-            "require": "./lib/index.cjs"
-        },
-        "./package.json": "./package.json"
+  "name": "koishi-plugin-chatluna-knowledge-chat",
+  "description": "Use large language models for knowledge Q&A",
+  "version": "1.0.14",
+  "main": "lib/index.cjs",
+  "module": "lib/index.mjs",
+  "typings": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.mjs",
+      "require": "./lib/index.cjs"
     },
-    "type": "module",
-    "files": [
-        "lib",
-        "dist",
-        "resources"
-    ],
-    "license": "AGPL-3.0",
-    "keywords": [
-        "chatbot",
-        "koishi",
-        "plugin",
-        "service",
-        "chatgpt",
-        "chatluna",
-        "market"
-    ],
-    "author": "dingyi222666 <dingyi222666@foxmail.com>",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/ChatLunaLab/chatluna-knowledge-chat.git",
-        "directory": "."
-    },
-    "bugs": {
-        "url": "https://github.com/ChatLunaLab/chatluna-knowledge-chat/issues"
-    },
-    "homepage": "https://github.com/ChatLunaLab/chatluna-knowledge-chat#readme",
-    "dependencies": {
-        "@langchain/community": "^0.3.5",
-        "@langchain/core": "^0.3.11",
-        "js-yaml": "^4.1.0",
-        "langchain": "^0.3.2"
-    },
-    "resolutions": {
-        "@langchain/core": "0.3.11",
-        "js-tiktoken": "npm:@dingyi222666/js-tiktoken@^1.0.15"
-    },
+    "./package.json": "./package.json"
+  },
+  "type": "module",
+  "files": [
+    "lib",
+    "dist",
+    "resources"
+  ],
+  "license": "AGPL-3.0",
+  "keywords": [
+    "chatbot",
+    "koishi",
+    "plugin",
+    "service",
+    "chatgpt",
+    "chatluna",
+    "market"
+  ],
+  "author": "dingyi222666 <dingyi222666@foxmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ChatLunaLab/chatluna-knowledge-chat.git",
+    "directory": "."
+  },
+  "bugs": {
+    "url": "https://github.com/ChatLunaLab/chatluna-knowledge-chat/issues"
+  },
+  "homepage": "https://github.com/ChatLunaLab/chatluna-knowledge-chat#readme",
+  "dependencies": {
+    "@langchain/community": "^0.3.5",
+    "@langchain/core": "^0.3.11",
+    "js-yaml": "^4.1.0",
+    "langchain": "^0.3.2"
+  },
+  "resolutions": {
+    "@langchain/core": "0.3.11",
+    "js-tiktoken": "npm:@dingyi222666/js-tiktoken@^1.0.15"
+  },
+  "overrides": {
+    "@langchain/core": "0.3.11",
+    "js-tiktoken": "npm:@dingyi222666/js-tiktoken@^1.0.15"
+  },
+  "pnpm": {
     "overrides": {
-        "@langchain/core": "0.3.11",
-        "js-tiktoken": "npm:@dingyi222666/js-tiktoken@^1.0.15"
-    },
-    "pnpm": {
-        "overrides": {
-            "@langchain/core": "0.3.11",
-            "js-tiktoken": "npm:@dingyi222666/js-tiktoken@^1.0.15"
-        }
-    },
-    "devDependencies": {
-        "@typescript-eslint/eslint-plugin": "^7.18.1-alpha.3",
-        "@typescript-eslint/parser": "^8.8.2-alpha.12",
-        "atsc": "^1.2.2",
-        "esbuild": "^0.20.2",
-        "esbuild-register": "^3.6.0",
-        "eslint": "^8.57.1",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-config-standard": "^17.1.0",
-        "eslint-plugin-import": "^2.31.0",
-        "eslint-plugin-n": "^16.6.2",
-        "eslint-plugin-prettier": "^5.2.1",
-        "eslint-plugin-promise": "^7.1.0",
-        "koishi": "^4.18.0"
-    },
-    "peerDependencies": {
-        "koishi": "^4.18.0",
-        "koishi-plugin-chatluna": "^1.0.0-beta.100"
-    },
-    "engines": {
-        "node": ">=18.0.0"
-    },
-    "scripts": {
-        "build": "yakumo build",
-        "bump": "yakumo version",
-        "dep": "yakumo upgrade",
-        "pub": "yakumo publish",
-        "lint": "eslint packages --ext=ts --cache"
-    },
-    "koishi": {
-        "description": {
-            "zh": "基于 ChatLuna，使用大语言模型进行知识库问答"
-        },
-        "service": {
-            "required": [
-                "chatluna"
-            ]
-        }
+      "@langchain/core": "0.3.11",
+      "js-tiktoken": "npm:@dingyi222666/js-tiktoken@^1.0.15"
     }
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.18.1-alpha.3",
+    "@typescript-eslint/parser": "^8.8.2-alpha.12",
+    "atsc": "^1.2.2",
+    "esbuild": "^0.20.2",
+    "esbuild-register": "^3.6.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-promise": "^7.1.0",
+    "koishi": "^4.18.0"
+  },
+  "peerDependencies": {
+    "koishi": "^4.18.0",
+    "koishi-plugin-chatluna": "^1.0.0-beta.100"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "yakumo build",
+    "bump": "yakumo version",
+    "dep": "yakumo upgrade",
+    "pub": "yakumo publish",
+    "lint": "eslint packages --ext=ts --cache"
+  },
+  "koishi": {
+    "description": {
+      "zh": "基于 ChatLuna，使用大语言模型进行知识库问答"
+    },
+    "service": {
+      "required": [
+        "chatluna"
+      ]
+    }
+  }
 }
