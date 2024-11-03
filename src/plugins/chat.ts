@@ -102,7 +102,7 @@ async function createSearchChain(
 
     if (selectedKnowledge.length === 0) {
         logger.warn('No knowledge selected')
-        return null
+        return
     } else {
         logger.debug(`Selected knowledge: ${JSON.stringify(selectedKnowledge)}`)
     }
