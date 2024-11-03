@@ -107,10 +107,21 @@ export class KnowledgeService extends Service {
             })
         }
 
-        return (await selection.execute())?.[0]
+        let result = await selection.execute()
+
+        if (result.length === 0) {
+            result = await this.ctx.database
+                .select('chathub_knowledge')
+                .where({
+                    path
+                })
+                .execute()
+        }
+
+        return result[0]
     }
 
-    async deleteDocument(path: string, db: string) {
+    async deleteDocument(path: string, db?: string) {
         const config = await this._getDocumentConfig(
             path,
             db ?? this.ctx.chatluna.config.defaultVectorStore
@@ -119,17 +130,19 @@ export class KnowledgeService extends Service {
         if (config == null) {
             throw new ChatLunaError(
                 ChatLunaErrorCode.KNOWLEDGE_VECTOR_NOT_FOUND,
-                new Error(`Knowledge vector ${path} not found`)
+                new Error(`Knowledge vector ${path} from ${db} not found`)
             )
         }
 
         const vectorStore = await this.createVectorStore(config)
 
-        await vectorStore.delete()
+        await vectorStore.delete({ deleteAll: true })
 
         await this.ctx.database.remove('chathub_knowledge', {
             path
         })
+
+        delete this._vectorStores[config.path]
 
         this.ctx.emit('chatluna-knowledge/delete', path)
     }
