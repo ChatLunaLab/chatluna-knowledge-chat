@@ -78,6 +78,7 @@ async function createSearchChain(
     const chatVectorStore = ctx.chatluna.config.defaultVectorStore
     const selectedKnowledge: DocumentConfig[] = []
 
+    console.log(preset)
     if (searchKnowledge) {
         const regex =
             typeof searchKnowledge === 'string'

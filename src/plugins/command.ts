@@ -31,15 +31,17 @@ export async function apply(
             }
 
             const supportType = ['text', 'code', 'markdown']
+            const chunkType = options.type ?? config.chunkType
+            console.log(chunkType, config.chunkType)
 
-            if (!supportType.includes(options.type)) {
-                return `不支持的切块类型：${options.type}。目前支持的类型有：${supportType.join(', ')}`
+            if (!supportType.includes(chunkType)) {
+                return `不支持的切块类型：${chunkType}。目前支持的类型有：${supportType.join(', ')}`
             }
 
             const documents = await loader.load(path, {
                 chunkOverlap: options.overlap ?? config.chunkOverlap,
                 chunkSize: options.size ?? config.chunkSize,
-                type: options.type ?? config.chunkType
+                type: chunkType
             })
 
             await session.send(

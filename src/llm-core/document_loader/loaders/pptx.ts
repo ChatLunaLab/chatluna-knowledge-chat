@@ -1,12 +1,12 @@
 import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
-import { PPTXLoader } from '@langchain/community/document_loaders/fs/pptx'
 
 export default class PPTXDocumentLoader extends DocumentLoader {
-    public load(
+    public async load(
         path: string,
         fields: DocumentLoaderFields
     ): Promise<Document[]> {
+        const PPTXLoader = await PPTXDocumentLoader.importPPTXLoader()
         const loader = new PPTXLoader(path)
 
         return loader.load()
@@ -16,5 +16,20 @@ export default class PPTXDocumentLoader extends DocumentLoader {
         const ext = path.split('.').pop() || ''
 
         return ext.toLowerCase() === 'ppt' || ext.toLowerCase() === 'pptx'
+    }
+
+    static async importPPTXLoader(): Promise<
+        typeof import('@langchain/community/document_loaders/fs/pptx').PPTXLoader
+    > {
+        try {
+            return (
+                await import('@langchain/community/document_loaders/fs/pptx')
+            ).PPTXLoader
+        } catch (e) {
+            console.error(e)
+            throw new Error(
+                'Please install pptx loader: npm install officeparser'
+            )
+        }
     }
 }

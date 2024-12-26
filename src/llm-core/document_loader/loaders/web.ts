@@ -16,6 +16,12 @@ export default class WebLoader extends DocumentLoader {
 
     public async support(path: string): Promise<boolean> {
         const supported = /^(http|https):\/\//i.test(path)
+
+        if (path.includes('bilibili')) {
+            // use bilibili loader
+            return false
+        }
+
         return supported
     }
 }
