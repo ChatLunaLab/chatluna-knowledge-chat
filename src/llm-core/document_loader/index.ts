@@ -15,6 +15,8 @@ import DocXDocumentLoader from './loaders/doc'
 import UnstructuredDocumentLoader from './loaders/unstructured'
 import PDFDocumentLoader from './loaders/pdf'
 import WebLoader from './loaders/web'
+import PPTXDocumentLoader from './loaders/pptx'
+import EPUBDocumentLoader from './loaders/epub'
 export class DefaultDocumentLoader extends DocumentLoader {
     private _loaders: DocumentLoader[] = []
     private _supportLoaders: Record<string, DocumentLoader> = {}
@@ -91,7 +93,11 @@ export class DefaultDocumentLoader extends DocumentLoader {
             (ctx: Context, config: Config, parent?: DocumentLoader) =>
                 new PDFDocumentLoader(ctx, config, parent),
             (ctx: Context, config: Config, parent?: DocumentLoader) =>
-                new WebLoader(ctx, config, parent)
+                new WebLoader(ctx, config, parent),
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new PPTXDocumentLoader(ctx, config, parent),
+            (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                new EPUBDocumentLoader(ctx, config, parent)
         ]
 
         if (this.config.unstructuredApiKey?.length > 0) {
