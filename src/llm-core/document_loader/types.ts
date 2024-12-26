@@ -20,4 +20,5 @@ export abstract class DocumentLoader {
 export interface DocumentLoaderFields {
     chunkSize?: number
     chunkOverlap?: number
+    type: string
 }

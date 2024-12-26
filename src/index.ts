@@ -49,6 +49,7 @@ export interface Config extends ChatLunaPlugin.Config {
     chunkSize: number
     model: string
     chunkOverlap: number
+    chunkType: string
     minSimilarityScore: number
     mode: 'default' | 'regenerate' | 'contextual-compression'
     unstructuredApiEndpoint: string
@@ -73,6 +74,13 @@ export const Config = Schema.intersect([
             .description(
                 '文本块之间的最大重叠量（字体）。保留一些重叠可以保持文本块之间的连续性'
             ),
+        chunkType: Schema.union([
+            Schema.const('text').description('按文本分割'),
+            Schema.const('markdown').description('按 markdown 分割'),
+            Schema.const('code').description('按代码分割')
+        ])
+            .default('code')
+            .description('文本分块方法'),
         mode: Schema.union([
             Schema.const('default').description('直接对问题查询'),
             Schema.const('regenerate').description('重新生成问题查询'),

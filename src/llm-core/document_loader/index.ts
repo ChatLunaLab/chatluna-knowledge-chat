@@ -38,12 +38,44 @@ export class DefaultDocumentLoader extends DocumentLoader {
 
         const documents = await loader.load(path, fields)
 
-        const textSplitter = new RecursiveCharacterTextSplitter({
-            chunkSize: fields.chunkSize ?? 1000,
-            chunkOverlap: fields.chunkOverlap ?? 100
+        return await this.split(path, documents, fields)
+    }
+
+    public async split(
+        path: string,
+        documents: Document[],
+        fields: DocumentLoaderFields
+    ): Promise<Document[]> {
+        if (fields.type === 'markdown') {
+            const splitter = RecursiveCharacterTextSplitter.fromLanguage(
+                'markdown',
+                {
+                    chunkSize: fields.chunkSize || 1000,
+                    chunkOverlap: fields.chunkOverlap || 200
+                }
+            )
+            return await splitter.splitDocuments(documents)
+        } else if (fields.type === 'code') {
+            const language = getLanguageByPath(path)
+            if (language) {
+                const splitter = RecursiveCharacterTextSplitter.fromLanguage(
+                    language,
+                    {
+                        chunkSize: fields.chunkSize || 1000,
+                        chunkOverlap: fields.chunkOverlap || 200
+                    }
+                )
+
+                return await splitter.splitDocuments(documents)
+            }
+        }
+
+        const splitter = new RecursiveCharacterTextSplitter({
+            chunkSize: fields.chunkSize || 1000,
+            chunkOverlap: fields.chunkOverlap || 200
         })
 
-        return await textSplitter.splitDocuments(documents)
+        return await splitter.splitDocuments(documents)
     }
 
     public async support(path: string): Promise<boolean> {
@@ -110,5 +142,50 @@ export class DefaultDocumentLoader extends DocumentLoader {
         for (const loader of loaders) {
             this._loaders.push(loader(this.ctx, this.config, this))
         }
+    }
+}
+
+function getLanguageByPath(path: string) {
+    const ext = path.split('.').pop()?.toLowerCase()
+    switch (ext) {
+        case 'cpp':
+        case 'c':
+        case 'h':
+        case 'hpp':
+            return 'cpp'
+        case 'go':
+            return 'go'
+        case 'java':
+            return 'java'
+        case 'js':
+        case 'ts':
+            return 'js'
+        case 'php':
+            return 'php'
+        case 'proto':
+            return 'proto'
+        case 'py':
+            return 'python'
+        case 'rst':
+            return 'rst'
+        case 'rb':
+            return 'ruby'
+        case 'rs':
+            return 'rust'
+        case 'scala':
+            return 'scala'
+        case 'swift':
+            return 'swift'
+        case 'md':
+            return 'markdown'
+        case 'tex':
+            return 'latex'
+        case 'html':
+        case 'htm':
+            return 'html'
+        case 'sol':
+            return 'sol'
+        default:
+            return null
     }
 }

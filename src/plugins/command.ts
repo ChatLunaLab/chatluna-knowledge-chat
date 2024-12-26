@@ -20,6 +20,7 @@ export async function apply(
         .option('size', '-s --size <value:number> 文本块的切割大小（字符）')
         .option('name', '-n --name <name:string> 资料名称')
         .option('overlap', '-o --overlap <value:number> 文件路径')
+        .option('type', '-t --type <string> 分割使用的方法')
         .action(async ({ options, session }, path) => {
             const loader = ctx.chatluna_knowledge.loader
 
@@ -29,9 +30,16 @@ export async function apply(
                 return `不支持的文件类型：${path}`
             }
 
+            const supportType = ['text', 'code', 'markdown']
+
+            if (!supportType.includes(options.type)) {
+                return `不支持的切块类型：${options.type}。目前支持的类型有：${supportType.join(', ')}`
+            }
+
             const documents = await loader.load(path, {
                 chunkOverlap: options.overlap ?? config.chunkOverlap,
-                chunkSize: options.size ?? config.chunkSize
+                chunkSize: options.size ?? config.chunkSize,
+                type: options.type ?? config.chunkType
             })
 
             await session.send(
@@ -64,7 +72,8 @@ export async function apply(
 
                 const documents = await loader.load(path, {
                     chunkOverlap: options.overlap ?? config.chunkOverlap,
-                    chunkSize: options.size ?? config.chunkSize
+                    chunkSize: options.size ?? config.chunkSize,
+                    type: config.chunkType
                 })
 
                 ctx.logger.info(

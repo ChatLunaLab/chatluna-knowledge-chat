@@ -15,14 +15,8 @@ export default class MarkdownLoader extends DocumentLoader {
         const ext = path.split('.').pop() || ''
 
         switch (ext.toLowerCase()) {
-            case 'text':
-            case 'txt':
-            case 'bat':
-            case 'java':
-            case 'js':
-            case 'ts':
-            case 'kt':
-            case 'lua':
+            case 'md':
+                return true
             default:
                 return false
         }

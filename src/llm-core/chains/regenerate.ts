@@ -18,11 +18,11 @@ function cropMessages(message: BaseMessage[]) {
     return message
         .slice(-20)
         .map((chatMessage) => {
-            if (chatMessage._getType() === 'human') {
+            if (chatMessage.getType() === 'human') {
                 return `Human: ${chatMessage.content}`
-            } else if (chatMessage._getType() === 'ai') {
+            } else if (chatMessage.getType() === 'ai') {
                 return `Assistant: ${chatMessage.content}`
-            } else if (chatMessage._getType() === 'system') {
+            } else if (chatMessage.getType() === 'system') {
                 return `System: ${chatMessage.content}`
             } else {
                 return `${chatMessage.content}`

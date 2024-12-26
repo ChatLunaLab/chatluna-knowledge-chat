@@ -24,6 +24,19 @@ export default class TextDocumentLoader extends DocumentLoader {
             case 'kt':
             case 'lua':
             case 'md':
+            case 'cpp':
+            case 'go':
+            case 'php':
+            case 'proto':
+            case 'py':
+            case 'rst':
+            case 'rb':
+            case 'rs':
+            case 'scala':
+            case 'swift':
+            case 'tex':
+            case 'html':
+            case 'sol':
                 return true
             default:
                 return false
