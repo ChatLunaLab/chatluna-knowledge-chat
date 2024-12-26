@@ -57,7 +57,9 @@ export async function apply(
                 await chatInterface.chatHistory.getMessages()
             )
 
-            logger.debug(`Documents: ${documents}`)
+            logger.debug(
+                `Documents: ${documents.map((doc) => doc.pageContent).join('\n\n')}`
+            )
 
             promptVariables['knowledge'] = documents
         }
@@ -78,7 +80,6 @@ async function createSearchChain(
     const chatVectorStore = ctx.chatluna.config.defaultVectorStore
     const selectedKnowledge: DocumentConfig[] = []
 
-    console.log(preset)
     if (searchKnowledge) {
         const regex =
             typeof searchKnowledge === 'string'
