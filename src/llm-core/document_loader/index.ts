@@ -125,8 +125,6 @@ export class DefaultDocumentLoader extends DocumentLoader {
             (ctx: Context, config: Config, parent?: DocumentLoader) =>
                 new PDFDocumentLoader(ctx, config, parent),
             (ctx: Context, config: Config, parent?: DocumentLoader) =>
-                new WebLoader(ctx, config, parent),
-            (ctx: Context, config: Config, parent?: DocumentLoader) =>
                 new PPTXDocumentLoader(ctx, config, parent),
             (ctx: Context, config: Config, parent?: DocumentLoader) =>
                 new EPUBDocumentLoader(ctx, config, parent)
@@ -136,6 +134,11 @@ export class DefaultDocumentLoader extends DocumentLoader {
             loaders.push(
                 (ctx: Context, config: Config, parent?: DocumentLoader) =>
                     new UnstructuredDocumentLoader(ctx, config, parent)
+            )
+        } else {
+            loaders.push(
+                (ctx: Context, config: Config, parent?: DocumentLoader) =>
+                    new WebLoader(ctx, config, parent)
             )
         }
 

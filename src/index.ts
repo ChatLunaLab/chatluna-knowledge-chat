@@ -114,13 +114,13 @@ export const inject = ['chatluna']
 export const usage = `
 现我们不再直接依赖相关库，你需要自己安装相关依赖到 koishi 根目录下。
 
-要查看如何配置 pdf 文件, 看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/how_to/pdf)
+要查看如何配置 pdf 文件, 看[这里](https://js.langchain.com/docs/how_to/document_loader_pdf/)
 
-要查看如何配置 csv，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/csv)
+要查看如何配置 csv，看[这里](https://js.langchain.com/docs/how_to/document_loader_csv/)
 
-要查看如何配置 docx，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/file_loaders/docx)
+要查看如何配置 docx，看[这里](https://js.langchain.com/docs/integrations/document_loaders/file_loaders/docx/)
 
-要查看如何配置 web 网页，看[这里](https://js.langchain.com/docs/modules/data_connection/document_loaders/integrations/web_loaders/web_cheerio)
+要查看如何配置 unstructured，看[这里](https://js.langchain.com/docs/how_to/document_loader_html)
 
 使用之前用 \`chatluna knowledge upload\` 上传文件到知识库。然后在上面选择那个知识库。
 
