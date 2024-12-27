@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-chatluna-knowledge-chat",
   "description": "Use large language models for knowledge Q&A",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "main": "lib/index.cjs",
   "module": "lib/index.mjs",
   "typings": "lib/index.d.ts",
@@ -75,7 +75,7 @@
     "koishi": "^4.18.4"
   },
   "peerDependencies": {
-    "koishi": "^4.18.4",
+    "koishi": "^4.18.1",
     "koishi-plugin-chatluna": "^1.0.0-beta.100"
   },
   "engines": {
