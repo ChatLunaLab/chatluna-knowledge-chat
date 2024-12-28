@@ -114,6 +114,10 @@ export const inject = ['chatluna']
 export const usage = `
 现我们不再直接依赖相关库，你需要自己安装相关依赖到 koishi 根目录下。
 
+## **重要提示**
+
+安装这些额外依赖，如果失败，可能会导致 koishi 无法启动，无法安装任何依赖等问题。请谨慎操作。
+
 要查看如何配置 pdf 文件, 看[这里](https://js.langchain.com/docs/how_to/document_loader_pdf/)
 
 要查看如何配置 csv，看[这里](https://js.langchain.com/docs/how_to/document_loader_csv/)
