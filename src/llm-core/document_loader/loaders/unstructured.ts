@@ -1,18 +1,38 @@
 import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
-import { UnstructuredLoader } from '@langchain/community/document_loaders/fs/unstructured'
+import {
+    UnstructuredLoader,
+    UnstructuredMemoryLoaderOptions
+} from '@langchain/community/document_loaders/fs/unstructured'
+import { readFile } from 'fs/promises'
 
 export default class UnstructuredDocumentLoader extends DocumentLoader {
-    public load(
+    public async load(
         path: string,
         fields: DocumentLoaderFields
     ): Promise<Document[]> {
-        const loader = new UnstructuredLoader(path, {
+        let options: string | UnstructuredMemoryLoaderOptions = path
+
+        if (!path.startsWith('http')) {
+            options = await this.readFile(path)
+        }
+
+        const loader = new UnstructuredLoader(options, {
             apiKey: this.config.unstructuredApiKey,
             apiUrl: this.config.unstructuredApiEndpoint
         })
 
         return loader.load()
+    }
+
+    async readFile(path: string): Promise<UnstructuredMemoryLoaderOptions> {
+        const buffer = await readFile(path)
+
+        const fileName = path.split('/').pop() || ''
+        return {
+            buffer,
+            fileName
+        }
     }
 
     public async support(path: string): Promise<boolean> {
