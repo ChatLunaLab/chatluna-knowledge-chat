@@ -8,7 +8,7 @@ import {
 } from 'koishi-plugin-chatluna/utils/error'
 import { VectorStore } from '@langchain/core/vectorstores'
 import { DefaultDocumentLoader } from '../llm-core/document_loader'
-import { Config } from '..'
+import { Config, logger } from '..'
 import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/llm-core/model/base'
 import { randomUUID } from 'crypto'
 import path from 'path'
@@ -191,8 +191,34 @@ export class KnowledgeService extends Service {
 
         const chunkDocuments = chunkArray(documents, 60)
 
+        const startTime = performance.now()
+        const totalDocs = documents.length
+        let completedDocs = 0
+        let lastLogTime = startTime
+
+        // Progress logging function
+        const logProgress = () => {
+            const currentTime = performance.now()
+            const elapsed = (currentTime - startTime) / 1000 // Convert to seconds
+            const avgTimePerDoc = elapsed / (completedDocs || 1)
+            const remaining = (totalDocs - completedDocs) * avgTimePerDoc
+
+            if (currentTime - lastLogTime > 5000) {
+                // Log every 5 seconds
+                logger.info(
+                    `Progress: ${completedDocs}/${totalDocs} documents` +
+                        ` (${Math.round((completedDocs / totalDocs) * 100)}%)` +
+                        ` | Elapsed: ${Math.round(elapsed)}s` +
+                        ` | Est. remaining: ${Math.round(remaining)}s`
+                )
+                lastLogTime = currentTime
+            }
+        }
+
         for (const chunk of chunkDocuments) {
             await vectorStore.addDocuments(chunk)
+            completedDocs += chunk.length
+            logProgress()
         }
 
         if (vectorStore instanceof ChatLunaSaveableVectorStore) {
@@ -202,6 +228,11 @@ export class KnowledgeService extends Service {
         this.ctx.database.upsert('chathub_knowledge', [config])
 
         this.ctx.emit('chatluna-knowledge/upload', documents, filePath)
+
+        const totalTime = (performance.now() - startTime) / 1000
+        logger.info(
+            `Upload completed: ${totalDocs} documents in ${Math.round(totalTime)}s`
+        )
     }
 
     private extractNameFromPath(filePath: string): string {
