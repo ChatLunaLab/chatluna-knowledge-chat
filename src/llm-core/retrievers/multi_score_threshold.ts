@@ -74,6 +74,7 @@ export class MultiScoreThresholdRetriever<
 
         // console.log(filteredResults)
         return filteredResults
+            .sort(([, score1], [, score2]) => (score2 > score1 ? -1 : 1))
             .map((documents) => documents[0])
             .slice(0, this.maxK)
     }

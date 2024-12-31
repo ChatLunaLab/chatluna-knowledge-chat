@@ -115,7 +115,7 @@ async function createSearchChain(
         )
     )
 
-    const retriever = createRetriever(ctx, config, vectorStores)
+    const retriever = createRetriever(config, vectorStores)
 
     if (!config.model) {
         throw new ChatLunaError(
@@ -133,12 +133,9 @@ async function createSearchChain(
     return ctx.chatluna_knowledge.chains[config.mode](model, retriever)
 }
 
-function createRetriever(
-    ctx: Context,
-    config: Config,
-    vectorStores: VectorStore[]
-) {
+function createRetriever(config: Config, vectorStores: VectorStore[]) {
     return MultiScoreThresholdRetriever.fromVectorStores(vectorStores, {
-        minSimilarityScore: config.minSimilarityScore
+        minSimilarityScore: config.minSimilarityScore,
+        maxK: config.topK
     })
 }

@@ -48,6 +48,7 @@ export interface Config extends ChatLunaPlugin.Config {
     defaultKnowledge: string
     chunkSize: number
     model: string
+    topK: number
     chunkOverlap: number
     chunkType: string
     minSimilarityScore: number
@@ -94,7 +95,14 @@ export const Config = Schema.intersect([
             .max(1)
             .step(0.001)
             .default(0.5)
-            .description('文本搜索的最小相似度')
+            .description('文本搜索的最小相似度'),
+        topK: Schema.number()
+            .role('slider')
+            .min(1)
+            .max(100)
+            .step(1)
+            .default(30)
+            .description('搜索文档的数量')
     }).description('基础配置'),
 
     Schema.object({
