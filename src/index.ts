@@ -9,7 +9,7 @@ import { chains } from './chains'
 export let logger: Logger
 
 export function apply(ctx: Context, config: Config) {
-    const plugin = new ChatLunaPlugin(ctx, config, 'knowledge-chat')
+    const plugin = new ChatLunaPlugin(ctx, config, 'knowledge-chat', false)
     logger = createLogger(ctx, 'chatluna-knowledge-chat')
 
     ctx.on('ready', async () => {
