@@ -21,7 +21,7 @@ export async function apply(
     plugin: ChatLunaPlugin,
     chain: ChatChain
 ): Promise<void> {
-    const cache = new Map<string, ReturnType<Chain>>()
+    const cache: Map<string, ReturnType<Chain>> = new Map()
 
     ctx.on(
         'chatluna/before-chat',
@@ -36,8 +36,9 @@ export async function apply(
                 return undefined
             }
 
-            let searchChain: ReturnType<Chain> = cache[conversationId]
+            let searchChain: ReturnType<Chain> = cache.get(conversationId)
 
+            console.log('searchChain', searchChain)
             if (!searchChain) {
                 searchChain = await createSearchChain(
                     ctx,
@@ -49,7 +50,7 @@ export async function apply(
                     return
                 }
 
-                cache[conversationId] = searchChain
+                cache.set(conversationId, searchChain)
             }
 
             const documents = await searchChain(
@@ -67,6 +68,7 @@ export async function apply(
 
     ctx.on('chatluna/clear-chat-history', async () => {
         cache.clear()
+        ctx.chatluna_knowledge.clearVectorStore()
     })
 }
 

@@ -248,6 +248,10 @@ export class KnowledgeService extends Service {
         return this._chains[type]
     }
 
+    clearVectorStore() {
+        this._vectorStores = {}
+    }
+
     public get loader() {
         return this._loader
     }
