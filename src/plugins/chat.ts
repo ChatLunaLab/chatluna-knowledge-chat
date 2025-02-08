@@ -38,7 +38,6 @@ export async function apply(
 
             let searchChain: ReturnType<Chain> = cache.get(conversationId)
 
-            console.log('searchChain', searchChain)
             if (!searchChain) {
                 searchChain = await createSearchChain(
                     ctx,
