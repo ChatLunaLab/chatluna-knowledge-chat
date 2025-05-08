@@ -1,6 +1,6 @@
 import { Context } from 'koishi'
 import { DocumentLoader, DocumentLoaderFields } from './types'
-import { Config } from '../..'
+import { Config, logger } from '../..'
 import { Document } from '@langchain/core/documents'
 import {
     ChatLunaError,
@@ -80,9 +80,13 @@ export class DefaultDocumentLoader extends DocumentLoader {
 
     public async support(path: string): Promise<boolean> {
         for (const loader of this._loaders) {
-            if (await loader.support(path)) {
-                this._supportLoaders[path] = loader
-                return true
+            try {
+                if (await loader.support(path)) {
+                    this._supportLoaders[path] = loader
+                    return true
+                }
+            } catch (e) {
+                continue
             }
         }
 
