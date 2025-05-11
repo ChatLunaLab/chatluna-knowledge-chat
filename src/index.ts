@@ -43,6 +43,7 @@ export const name = 'chatluna-knowledge-chat'
 export * from './service/types'
 export * from './service/knowledge'
 export * from './llm-core/chains/type'
+export * from './types'
 
 export interface Config extends ChatLunaPlugin.Config {
     defaultKnowledge: string
