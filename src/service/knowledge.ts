@@ -1,25 +1,34 @@
 import { Context, Service } from 'koishi'
 import { parseRawModelName } from 'koishi-plugin-chatluna/llm-core/utils/count_tokens'
 import { Document } from '@langchain/core/documents'
-import { DocumentConfig } from '../types'
 import {
     ChatLunaError,
     ChatLunaErrorCode
 } from 'koishi-plugin-chatluna/utils/error'
-import { VectorStore } from '@langchain/core/vectorstores'
-import { DefaultDocumentLoader } from '../llm-core/document_loader'
-import { Config, logger } from '..'
-import { ChatLunaSaveableVectorStore } from 'koishi-plugin-chatluna/llm-core/model/base'
+import { DefaultDocumentLoader } from '../document-loader'
+import { Config, logger } from 'koishi-plugin-chatluna-knowledge-chat'
 import { randomUUID } from 'crypto'
 import path from 'path'
 import fs from 'fs/promises'
-import { Chain } from '../llm-core/chains/type'
-import { MultiScoreThresholdRetriever } from '../llm-core/retrievers/multi_score_threshold'
+import {
+    chunkArray,
+    createHippoRAGConfig,
+    createLightRAGConfig,
+    createStandardRAGConfig
+} from '../utils'
+import {
+    AddDocumentsOptions,
+    BaseRAGRetriever,
+    DeleteDocumentsOptions,
+    RAGRetrieverType,
+    RetrieverConfig
+} from 'koishi-plugin-chatluna-vector-store-service'
+import { ComputedRef } from 'koishi-plugin-chatluna'
 
 export class KnowledgeService extends Service {
-    private _vectorStores: Record<string, VectorStore> = {}
+    private _ragRetrievers: Record<string, ComputedRef<BaseRAGRetriever>> = {}
+
     private _loader: DefaultDocumentLoader
-    private _chains: Record<string, Chain> = {}
 
     constructor(
         readonly ctx: Context,
@@ -28,13 +37,14 @@ export class KnowledgeService extends Service {
         super(ctx, 'chatluna_knowledge')
         defineDatabase(ctx)
 
-        const knowledgeDir = path.join(
-            ctx.baseDir,
-            'data/chathub/knowledge/default'
-        )
+        const knowledgeDir = path.join(ctx.baseDir, 'data/chathub/knowledge')
 
         ctx.on('dispose', async () => {
-            this._vectorStores = {}
+            // Dispose all RAG retrievers
+            for (const retriever of Object.values(this._ragRetrievers)) {
+                await retriever.value.dispose()
+            }
+            this._ragRetrievers = {}
         })
 
         ctx.on('ready', async () => {
@@ -48,146 +58,242 @@ export class KnowledgeService extends Service {
         this._loader = new DefaultDocumentLoader(ctx, config)
     }
 
-    async createVectorStore(documentConfig: DocumentConfig) {
-        const {
-            path,
+    /**
+     * Create a new knowledge base
+     */
+    async createKnowledgeBase(
+        name: string,
+        ragType: RAGRetrieverType = 'standard',
+        options?: {
+            description?: string
+            embeddings?: string
+            ragConfig?: RetrieverConfig
+        }
+    ): Promise<string> {
+        const id = randomUUID()
+
+        const embeddingsName =
+            options?.embeddings ?? this.ctx.chatluna.config.defaultEmbeddings
+
+        const embeddingsModel =
+            await this.ctx.chatluna.createEmbeddings(embeddingsName)
+
+        if (!embeddingsModel) {
+            throw new ChatLunaError(
+                ChatLunaErrorCode.EMBEDDINGS_INIT_ERROR,
+                new Error(`Embeddings model ${embeddingsName} not found`)
+            )
+        }
+
+        const config: DocumentConfig = {
             id,
-            vector_storage: vectorStorage,
-            embeddings: embeddingsName
+            name,
+            ragType,
+            embeddings: embeddingsName,
+            description: options?.description,
+            ragConfig: options?.ragConfig
+        }
+
+        await this.ctx.database.upsert('chatluna_knowledge', [config])
+
+        logger.info(`Created knowledge base: ${name} (${id})`)
+        return id
+    }
+
+    /**
+     * Delete a knowledge base and all its documents
+     */
+    async deleteKnowledgeBase(idOrName: string): Promise<void> {
+        const config = await this.getDocumentConfig(idOrName)
+
+        if (!config) {
+            throw new ChatLunaError(
+                ChatLunaErrorCode.KNOWLEDGE_CONFIG_INVALID,
+                new Error(`Knowledge base ${idOrName} not found`)
+            )
+        }
+
+        // Get RAG retriever and delete all documents
+        const retriever = await this.getRAGRetriever(config.id)
+        await retriever.value.deleteDocuments({ deleteAll: true })
+
+        // Remove from database
+        await this.ctx.database.remove('chatluna_knowledge', {
+            id: config.id
+        })
+
+        // Clean up cache
+        delete this._ragRetrievers[config.id]
+
+        logger.info(`Deleted knowledge base: ${config.name} (${config.id})`)
+        this.ctx.emit('chatluna-knowledge/delete-kb', config.id, config.name)
+    }
+
+    /**
+     * Create or get RAG retriever for a knowledge base
+     */
+    async createRAGRetriever(documentConfig: DocumentConfig) {
+        const {
+            id,
+            ragType,
+            embeddings: embeddingsName,
+            ragConfig
         } = documentConfig
 
-        if (this._vectorStores[path]) {
-            return this._vectorStores[path]
+        if (this._ragRetrievers[id]) {
+            return this._ragRetrievers[id]
         }
 
         const embeddings = await this.ctx.chatluna.createEmbeddings(
             ...parseRawModelName(embeddingsName)
         )
 
-        const vectorStore = await this.ctx.chatluna.platform.createVectorStore(
-            vectorStorage,
-            {
-                key: id,
-                embeddings
-            }
-        )
-
-        this._vectorStores[path] = vectorStore
-
-        return vectorStore
-    }
-
-    async loadVectorStore(path: string) {
-        if (this._vectorStores[path]) {
-            return this._vectorStores[path]
+        // Create base config
+        let config: RetrieverConfig = {
+            embeddings: embeddings.value,
+            vectorStoreKey: id,
+            maxResults: this.config.topK,
+            ...ragConfig
         }
 
-        const config = await this._getDocumentConfig(path)
+        // Apply RAG-specific configurations
+        if (ragType === 'standard') {
+            const llm = this.config.standardModel
+                ? await this.ctx.chatluna.createChatModel(
+                      this.config.standardModel
+                  )
+                : await this.ctx.chatluna.createChatModel(
+                      this.ctx.chatluna.config.defaultModel
+                  )
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            config = createStandardRAGConfig(this.config, config, llm as any)
+        } else if (ragType === 'hippo_rag') {
+            const llm = this.config.hippoModel
+                ? await this.ctx.chatluna.createChatModel(
+                      this.config.hippoModel
+                  )
+                : await this.ctx.chatluna.createChatModel(
+                      this.ctx.chatluna.config.defaultModel
+                  )
+
+            config = createHippoRAGConfig(
+                this.ctx,
+                this.config,
+                config,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                llm as any
+            )
+        } else if (ragType === 'light_rag') {
+            const llm = this.config.standardModel
+                ? await this.ctx.chatluna.createChatModel(
+                      this.config.standardModel
+                  )
+                : undefined
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            config = createLightRAGConfig(this.config, config, llm as any)
+        }
+
+        const retriever = await this.ctx.chatluna_rag.createRAGRetriever(
+            ragType,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            config as any
+        )
+
+        this._ragRetrievers[id] = retriever
+
+        return retriever
+    }
+
+    /**
+     * Get RAG retriever by knowledge base ID or name
+     */
+    async getRAGRetriever(idOrName: string) {
+        // Try direct lookup by ID first
+        if (this._ragRetrievers[idOrName]) {
+            return this._ragRetrievers[idOrName]
+        }
+
+        const config = await this.getDocumentConfig(idOrName)
 
         if (!config) {
             throw new ChatLunaError(
                 ChatLunaErrorCode.KNOWLEDGE_CONFIG_INVALID,
-                new Error(`Knowledge config ${path} not found`)
+                new Error(`Knowledge base ${idOrName} not found`)
             )
         }
 
-        const vectorStore = await this.createVectorStore(config)
-
-        return vectorStore
+        return await this.createRAGRetriever(config)
     }
 
-    private async _getDocumentConfig(path: string, vectorStore?: string) {
-        let selection = this.ctx.database.select('chathub_knowledge').where({
-            path
-        })
-
-        if (vectorStore) {
-            selection = selection.where({
-                vector_storage: vectorStore
-            })
-        }
-
-        let result = await selection.execute()
+    async getDocumentConfig(idOrName: string): Promise<DocumentConfig | null> {
+        // Try by ID first
+        let result = await this.ctx.database
+            .select('chatluna_knowledge')
+            .where({ id: idOrName })
+            .execute()
 
         if (result.length === 0) {
+            // Try by name
             result = await this.ctx.database
-                .select('chathub_knowledge')
-                .where({
-                    path
-                })
+                .select('chatluna_knowledge')
+                .where({ name: idOrName })
                 .execute()
         }
 
-        return result[0]
+        return result[0] || null
     }
 
-    async deleteDocument(path: string, db?: string) {
-        const config = await this._getDocumentConfig(
-            path,
-            db ?? this.ctx.chatluna.config.defaultVectorStore
-        )
+    /**
+     * Delete documents from a knowledge base
+     */
+    async deleteDocument(
+        knowledgeBaseId: string,
+        documentIds?: string[]
+    ): Promise<void> {
+        const retriever = await this.getRAGRetriever(knowledgeBaseId)
 
-        if (config == null) {
-            throw new ChatLunaError(
-                ChatLunaErrorCode.KNOWLEDGE_VECTOR_NOT_FOUND,
-                new Error(`Knowledge vector ${path} from ${db} not found`)
-            )
-        }
+        const options: DeleteDocumentsOptions = documentIds
+            ? { ids: documentIds }
+            : { deleteAll: true }
 
-        const vectorStore = await this.createVectorStore(config)
+        await retriever.value.deleteDocuments(options)
 
-        await vectorStore.delete({ deleteAll: true })
-
-        await this.ctx.database.remove('chathub_knowledge', {
-            path
-        })
-
-        delete this._vectorStores[config.path]
-
-        this.ctx.emit('chatluna-knowledge/delete', path)
+        this.ctx.emit('chatluna-knowledge/delete', knowledgeBaseId, documentIds)
     }
 
-    public async listDocument(db?: string) {
-        let selection = this.ctx.database.select('chathub_knowledge')
-
-        if (db != null) {
-            selection = selection.where({
-                vector_storage: db
-            })
-        }
-
-        const result = await selection.execute()
+    /**
+     * List all knowledge bases
+     */
+    public async listKnowledgeBases(): Promise<DocumentConfig[]> {
+        const result = await this.ctx.database
+            .select('chatluna_knowledge')
+            .execute()
 
         return result
     }
 
+    /**
+     * List documents in a knowledge base
+     */
+    public async listDocuments(knowledgeBaseId: string): Promise<Document[]> {
+        const retriever = await this.getRAGRetriever(knowledgeBaseId)
+        return await retriever.value.listDocuments()
+    }
+
+    /**
+     * Upload documents to a knowledge base
+     */
     public async uploadDocument(
+        knowledgeBaseId: string,
         documents: Document[],
-        filePath: string,
-        name?: string
-    ) {
-        const existsDocument = await this.ctx.database.get(
-            'chathub_knowledge',
-            { path: filePath }
-        )
+        options?: AddDocumentsOptions
+    ): Promise<string[]> {
+        const retriever = await this.getRAGRetriever(knowledgeBaseId)
 
-        if (existsDocument.length > 0) {
-            return
-        }
-
-        const id = randomUUID()
-
-        name = name ?? this.extractNameFromPath(filePath)
-
-        const config: DocumentConfig = {
-            path: filePath,
-            id,
-            name,
-            vector_storage: this.ctx.chatluna.config.defaultVectorStore,
-            embeddings: this.ctx.chatluna.config.defaultEmbeddings
-        }
-
-        const vectorStore = await this.createVectorStore(config)
+        // Initialize retriever if needed
+        await retriever.value.initialize()
 
         const chunkDocuments = chunkArray(documents, 60)
 
@@ -196,15 +302,16 @@ export class KnowledgeService extends Service {
         let completedDocs = 0
         let lastLogTime = startTime
 
+        const allIds: string[] = []
+
         // Progress logging function
         const logProgress = () => {
             const currentTime = performance.now()
-            const elapsed = (currentTime - startTime) / 1000 // Convert to seconds
+            const elapsed = (currentTime - startTime) / 1000
             const avgTimePerDoc = elapsed / (completedDocs || 1)
             const remaining = (totalDocs - completedDocs) * avgTimePerDoc
 
             if (currentTime - lastLogTime > 5000) {
-                // Log every 5 seconds
                 logger.info(
                     `Progress: ${completedDocs}/${totalDocs} documents` +
                         ` (${Math.round((completedDocs / totalDocs) * 100)}%)` +
@@ -216,100 +323,104 @@ export class KnowledgeService extends Service {
         }
 
         for (const chunk of chunkDocuments) {
-            await vectorStore.addDocuments(chunk)
+            const ids = await retriever.value.addDocuments(chunk, options)
+            allIds.push(...ids)
             completedDocs += chunk.length
             logProgress()
         }
 
-        if (vectorStore instanceof ChatLunaSaveableVectorStore) {
-            await vectorStore.save()
-        }
-
-        this.ctx.database.upsert('chathub_knowledge', [config])
-
-        this.ctx.emit('chatluna-knowledge/upload', documents, filePath)
+        this.ctx.emit('chatluna-knowledge/upload', documents, knowledgeBaseId)
 
         const totalTime = (performance.now() - startTime) / 1000
         logger.info(
             `Upload completed: ${totalDocs} documents in ${Math.round(totalTime)}s`
         )
+
+        return allIds
     }
 
-    private extractNameFromPath(filePath: string): string {
-        // 移除开头的 http:// 或 https://
-        const cleanPath = filePath.replace(/^(https?:\/\/)/, '')
-
-        // 分割路径并获取最后一个元素
-        const parts = cleanPath.split(/[/\\]/)
-        return parts[parts.length - 1] || 'unknown'
+    /**
+     * Search for similar documents in a knowledge base
+     */
+    public async similaritySearch(
+        knowledgeBaseId: string,
+        query: string,
+        options?: { k?: number; threshold?: number }
+    ): Promise<Document[]> {
+        const retriever = await this.getRAGRetriever(knowledgeBaseId)
+        return await retriever.value.similaritySearch(query, options)
     }
 
-    getChain(type: string) {
-        return this._chains[type]
-    }
-
-    clearVectorStore() {
-        this._vectorStores = {}
+    /**
+     * Get statistics for a knowledge base
+     */
+    public async getKnowledgeBaseStats(knowledgeBaseId: string) {
+        const retriever = await this.getRAGRetriever(knowledgeBaseId)
+        return await retriever.value.getStats()
     }
 
     public get loader() {
         return this._loader
     }
 
-    public get chains() {
-        return this._chains
+    public clearCache() {
+        this._ragRetrievers = {}
     }
 
-    public createRetriever(vectorStores: VectorStore[]) {
-        return MultiScoreThresholdRetriever.fromVectorStores(vectorStores, {
-            minSimilarityScore: this.config.minSimilarityScore
-        })
-    }
-
-    static inject = ['database']
+    static inject = ['database', 'chatluna_rag']
 }
 
 function defineDatabase(ctx: Context) {
     ctx.database.extend(
-        'chathub_knowledge',
+        'chatluna_knowledge',
         {
-            path: { type: 'string', length: 254 },
-            id: { type: 'string', length: 254 },
-            vector_storage: { type: 'string', length: 254 },
-            embeddings: { type: 'string', length: 254 },
-            name: { type: 'string', length: 254 }
+            id: { type: 'string' },
+            name: { type: 'string' },
+            ragType: { type: 'string' },
+            embeddings: { type: 'string' },
+            description: { type: 'text' },
+            ragConfig: { type: 'json' },
+            createdAt: { type: 'date' },
+            updatedAt: { type: 'date' }
         },
         {
             autoInc: false,
-            primary: ['path', 'name']
+            primary: ['id']
         }
     )
 }
 
-function chunkArray<T>(array: T[], chunkSize: number): T[][] {
-    const result: T[][] = []
-    let startIndex = 0
-
-    try {
-        while (startIndex < array.length) {
-            // 直接使用下标构建子数组
-            const endIndex = Math.min(startIndex + chunkSize, array.length)
-            result.push(array.slice(startIndex, endIndex))
-            startIndex += chunkSize
-        }
-    } catch (error) {
-        console.error('An error occurred:', error)
-    }
-
-    return result
+export interface DocumentConfig {
+    id: string
+    name: string
+    ragType: RAGRetrieverType
+    embeddings: string
+    description?: string
+    ragConfig?: RetrieverConfig
+    createdAt?: Date
+    updatedAt?: Date
 }
 
 declare module 'koishi' {
     interface Events {
         'chatluna-knowledge/upload': (
             documents: Document[],
-            path: string
+            knowledgeBaseId: string
         ) => void
-        'chatluna-knowledge/delete': (path: string) => void
+        'chatluna-knowledge/delete': (
+            knowledgeBaseId: string,
+            documentIds?: string[]
+        ) => void
+        'chatluna-knowledge/delete-kb': (
+            knowledgeBaseId: string,
+            name: string
+        ) => void
+    }
+    interface Context {
+        chatluna_knowledge: KnowledgeService
+    }
+
+    interface Tables {
+        chatluna_knowledge: DocumentConfig
     }
 }

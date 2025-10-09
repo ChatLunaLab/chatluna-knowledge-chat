@@ -1,10 +1,9 @@
 import { ChatChain } from 'koishi-plugin-chatluna/chains'
 import { Context, Schema } from 'koishi'
-import { Config } from '..'
+import { Config } from 'koishi-plugin-chatluna-knowledge-chat'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 import type {} from 'koishi-plugin-chatluna/llm-core/memory/message'
-import { PlatformService } from 'koishi-plugin-chatluna/llm-core/platform/service'
-import { ModelType } from 'koishi-plugin-chatluna/llm-core/platform/types'
+import { modelSchema } from 'koishi-plugin-chatluna/utils/schema'
 
 export async function apply(
     ctx: Context,
@@ -21,9 +20,7 @@ export async function apply(
     })
 
     async function updateConfig() {
-        const documents = await ctx.chatluna_knowledge.listDocument(
-            ctx.chatluna.config.defaultVectorStore
-        )
+        const documents = await ctx.chatluna_knowledge.listKnowledgeBases()
 
         ctx.schema.set(
             'knowledge',
@@ -35,19 +32,7 @@ export async function apply(
         )
     }
 
-    ctx.on('chatluna/model-added', (service) => {
-        ctx.schema.set('model', Schema.union(getModelNames(service)))
-    })
-
-    ctx.on('chatluna/model-removed', (service) => {
-        ctx.schema.set('model', Schema.union(getModelNames(service)))
-    })
-
-    ctx.schema.set('model', Schema.union(getModelNames(ctx.chatluna.platform)))
-
     updateConfig()
-}
 
-function getModelNames(service: PlatformService) {
-    return service.getAllModels(ModelType.llm).map((m) => Schema.const(m))
+    modelSchema(ctx)
 }

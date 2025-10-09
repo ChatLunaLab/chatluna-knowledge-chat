@@ -1,6 +1,6 @@
 import { Context } from 'koishi'
 import { DocumentLoader, DocumentLoaderFields } from './types'
-import { Config } from '../..'
+import { Config } from 'koishi-plugin-chatluna-knowledge-chat'
 import { Document } from '@langchain/core/documents'
 import {
     ChatLunaError,

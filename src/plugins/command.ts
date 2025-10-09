@@ -1,163 +1,279 @@
-import { ChatChain } from 'koishi-plugin-chatluna/chains'
 import { Context } from 'koishi'
-import { Config } from '..'
+import { Config, logger } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
-import type {} from 'koishi-plugin-chatluna/llm-core/memory/message'
 import { Pagination } from 'koishi-plugin-chatluna/utils/pagination'
-import fs from 'fs/promises'
-import { DocumentConfig } from '../types'
-import path from 'path'
+import { DocumentConfig } from '../service/knowledge'
+import { Document } from '@langchain/core/documents'
+import { RAGRetrieverType } from 'koishi-plugin-chatluna-vector-store-service'
+import { processAndUploadDocuments } from '../utils'
 
 export async function apply(
     ctx: Context,
     config: Config,
-    plugin: ChatLunaPlugin,
-    chain: ChatChain
+    plugin: ChatLunaPlugin
 ): Promise<void> {
     ctx.command('chatluna.knowledge', 'ChatLuna 知识库相关命令')
 
-    ctx.command('chatluna.knowledge.upload <path:string>', '上传资料')
-        .option('size', '-s --size <value:number> 文本块的切割大小（字符）')
-        .option('name', '-n --name <name:string> 资料名称')
-        .option('overlap', '-o --overlap <value:number> 文件路径')
-        .option('type', '-t --type <string> 分割使用的方法')
-        .action(async ({ options, session }, path) => {
-            const loader = ctx.chatluna_knowledge.loader
-
-            const supported = await loader.support(path)
-
-            if (!supported) {
-                return `不支持的文件类型：${path}`
-            }
-
-            const supportType = ['text', 'code', 'markdown']
-            const chunkType = options.type ?? config.chunkType
-            console.log(chunkType, config.chunkType)
-
-            if (!supportType.includes(chunkType)) {
-                return `不支持的切块类型：${chunkType}。目前支持的类型有：${supportType.join(', ')}`
-            }
-
-            const documents = await loader.load(path, {
-                chunkOverlap: options.overlap ?? config.chunkOverlap,
-                chunkSize: options.size ?? config.chunkSize,
-                type: chunkType
-            })
-
-            await session.send(
-                `已对 ${path} 解析成 ${documents.length} 个文档块。正在保存至数据库`
-            )
-
-            await ctx.chatluna_knowledge.uploadDocument(
-                documents,
-                path
-                // Bug?
-                // options.name
-            )
-
-            return `已成功上传到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
-        })
-
-    ctx.command('chatluna.knowledge.init', '从默认文件夹初始化知识库')
-        .option('size', '-s --size <value:number> 文本块的切割大小（字符）')
-        .option('overlap', '-o --overlap <value:number> 文件路径')
-        .action(async ({ options, session }) => {
-            const loader = ctx.chatluna_knowledge.loader
-
-            const load = async (path: string) => {
-                const supported = await loader.support(path)
-
-                if (!supported) {
-                    ctx.logger.warn(`不支持的文件类型：${path}`)
-                    return false
+    // Create knowledge base command with optional document upload
+    ctx.command('chatluna.knowledge.create <name:string>', '创建知识库')
+        .option(
+            'type',
+            '-t --type <type:string> RAG类型 (standard/hippo_rag/light_rag)',
+            { fallback: 'standard' }
+        )
+        .option('description', '-d <desc:string> 知识库描述')
+        .option('embeddings', '-e <embeddings:string> 嵌入模型')
+        .option('upload', '-u <upload:string> 创建后立即上传文档')
+        .option('size', '-s <size:number> 文本块的切割大小（字符）')
+        .option('overlap', '-o <overlap:number> 切块重叠大小')
+        .option('chunkType', '-c <chunk-type:string> 分割使用的方法')
+        .action(async ({ options, session }, name) => {
+            console.log(options)
+            try {
+                // Validate RAG type
+                const validTypes: RAGRetrieverType[] = [
+                    'standard',
+                    'hippo_rag',
+                    'light_rag'
+                ]
+                if (!validTypes.includes(options.type as RAGRetrieverType)) {
+                    return `不支持的RAG类型：${options.type}。支持的类型有：${validTypes.join(', ')}`
                 }
 
-                const documents = await loader.load(path, {
-                    chunkOverlap: options.overlap ?? config.chunkOverlap,
-                    chunkSize: options.size ?? config.chunkSize,
-                    type: config.chunkType
-                })
+                // Create knowledge base
+                const knowledgeBaseId =
+                    await ctx.chatluna_knowledge.createKnowledgeBase(
+                        name,
+                        options.type as RAGRetrieverType,
+                        {
+                            description: options.description,
+                            embeddings: options.embeddings
+                        }
+                    )
 
-                ctx.logger.info(
-                    `已对 ${path} 解析成 ${documents.length} 个文档块。正在保存至数据库`
+                await session.send(
+                    `已创建知识库 "${name}" (ID: ${knowledgeBaseId})`
                 )
 
-                await ctx.chatluna_knowledge.uploadDocument(documents, path)
-
-                ctx.logger.info(
-                    `已成功上传到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
+                // Upload documents using unified function
+                const uploadResult = await processAndUploadDocuments(
+                    ctx,
+                    session,
+                    knowledgeBaseId,
+                    {
+                        size: options.size,
+                        overlap: options.overlap,
+                        chunkType: options.chunkType,
+                        initialPath: options.upload
+                    }
                 )
 
-                return true
+                return uploadResult
+            } catch (error) {
+                logger.error(error)
+                return `创建知识库失败：${error.message}`
             }
+        })
 
-            const knowledgeDir = path.join(
-                ctx.baseDir,
-                'data/chathub/knowledge/default'
-            )
+    // Upload documents to knowledge base
+    ctx.command(
+        'chatluna.knowledge.upload <knowledgeBase:string>',
+        '上传文档到知识库'
+    )
+        .option('size', '-s <size:number> 文本块的切割大小（字符）')
+        .option('overlap', '-o <overlap:number> 切块重叠大小')
+        .option('chunkType', '-c <chunk-type:string> 分割使用的方法')
+        .option('upload', '-u <upload:string> 文档上传路径')
+        .action(async ({ options, session }, knowledgeBase) => {
+            try {
+                const config =
+                    await ctx.chatluna_knowledge.getDocumentConfig(
+                        knowledgeBase
+                    )
 
-            const files = await fs.readdir(knowledgeDir)
-
-            const successPaths: string[] = []
-            for (const file of files) {
-                const filePath = path.join(knowledgeDir, file)
-
-                const result = await load(filePath)
-
-                if (result) {
-                    successPaths.push(filePath)
+                if (!config) {
+                    return `知识库 "${knowledgeBase}" 不存在！`
                 }
-            }
 
-            return `已成功上传 ${successPaths.length} / ${files.length} 个文档到 ${ctx.chatluna.config.defaultVectorStore} 向量数据库`
+                return await processAndUploadDocuments(
+                    ctx,
+                    session,
+                    config.id,
+                    {
+                        size: options.size,
+                        overlap: options.overlap,
+                        chunkType: options.chunkType,
+                        initialPath: options.upload
+                    }
+                )
+            } catch (error) {
+                logger.error(error)
+                return `上传失败：${error.message}`
+            }
         })
 
-    ctx.command('chatluna.knowledge.delete [path:string]', '删除资料')
-        .option('db', '-d --db <string> 数据库名')
-        .action(async ({ options, session }, path) => {
-            await session.send(
-                `正在从数据库中删除 ${path}，是否确认删除？回复大写 Y 以确认删除`
-            )
+    // Delete knowledge base or documents
+    ctx.command('chatluna.knowledge.delete <target:string>', '删除知识库或文档')
+        .option('kb', '-k 删除整个知识库')
+        .option('docs', '-d <docs:string> 删除指定文档ID（逗号分隔）')
+        .action(async ({ options, session }, target) => {
+            try {
+                if (options.kb) {
+                    // Delete entire knowledge base
+                    await session.send(
+                        `警告: 即将删除知识库 "${target}" 及其所有文档，此操作不可恢复！\n回复大写 Y 以确认删除`
+                    )
 
-            const promptResult = await session.prompt(1000 * 30)
+                    const promptResult = await session.prompt(1000 * 30)
 
-            if (promptResult == null || promptResult !== 'Y') {
-                return '已取消删除'
+                    if (promptResult == null || promptResult !== 'Y') {
+                        return '已取消删除'
+                    }
+
+                    await ctx.chatluna_knowledge.deleteKnowledgeBase(target)
+                    return `已成功删除知识库 "${target}"`
+                } else {
+                    // Delete specific documents from knowledge base
+                    let documentIds: string[] | undefined
+
+                    if (options.docs) {
+                        documentIds = options.docs
+                            .split(',')
+                            .map((id) => id.trim())
+                        await session.send(
+                            `警告: 即将从知识库删除文档 ${documentIds.join(', ')}\n回复大写 Y 以确认删除`
+                        )
+                    } else {
+                        await session.send(
+                            `警告: 即将删除知识库 "${target}" 中的所有文档\n回复大写 Y 以确认删除`
+                        )
+                    }
+
+                    const promptResult = await session.prompt(1000 * 30)
+
+                    if (promptResult == null || promptResult !== 'Y') {
+                        return '已取消删除'
+                    }
+
+                    await ctx.chatluna_knowledge.deleteDocument(
+                        target,
+                        documentIds
+                    )
+
+                    if (documentIds) {
+                        return `已成功删除文档 ${documentIds.join(', ')}`
+                    } else {
+                        return `已成功删除知识库 "${target}" 中的所有文档`
+                    }
+                }
+            } catch (error) {
+                logger.error(error)
+                return `删除失败：${error.message}`
             }
-
-            await deleteDocument(ctx, path, options.db)
-
-            return `已成功删除文档 ${path}`
         })
 
-    ctx.command('chatluna.knowledge.list', '列出资料')
+    // List knowledge bases or documents
+    ctx.command(
+        'chatluna.knowledge.list [knowledgeBase:string]',
+        '列出知识库或文档'
+    )
         .option('page', '-p <page:number> 页码', { fallback: 1 })
         .option('limit', '-l <limit:number> 每页数量', { fallback: 10 })
-        .option('db', '-d --db <string> 数据库名')
-        .action(async ({ options, session }) => {
-            const pagination = new Pagination<DocumentConfig>({
-                formatItem: (value) => formatDocumentInfo(value),
-                formatString: {
-                    pages: '第 [page] / [total] 页',
-                    top: '以下是你目前所有已经上传的文档\n',
-                    bottom: '你可以使用 chatluna.knowledge.set <name> 来切换当前环境里你使用的文档配置（文档配置不是文档）'
+        .option('docs', '-d 列出知识库中的文档')
+        .action(async ({ options, session }, knowledgeBase) => {
+            try {
+                if (!knowledgeBase) {
+                    // List all knowledge bases
+                    const pagination = new Pagination<DocumentConfig>({
+                        formatItem: (kb) => formatKnowledgeBaseInfo(kb),
+                        formatString: {
+                            pages: '第 [page] / [total] 页',
+                            top: '所有知识库列表\n',
+                            bottom: '\n提示: 使用 chatluna.knowledge.list <知识库名> --docs 查看知识库中的文档'
+                        }
+                    })
+
+                    const knowledgeBases =
+                        await ctx.chatluna_knowledge.listKnowledgeBases()
+                    await pagination.push(knowledgeBases)
+
+                    return pagination.getFormattedPage(
+                        options.page,
+                        options.limit
+                    )
+                } else {
+                    // List documents in specific knowledge base
+                    if (options.docs) {
+                        const pagination = new Pagination<Document>({
+                            formatItem: (doc) => formatDocumentInfo(doc),
+                            formatString: {
+                                pages: '第 [page] / [total] 页',
+                                top: `知识库 "${knowledgeBase}" 中的文档\n`,
+                                bottom: '\n提示: 使用 chatluna.knowledge.delete <知识库名> --docs <文档ID> 删除特定文档'
+                            }
+                        })
+
+                        const documents =
+                            await ctx.chatluna_knowledge.listDocuments(
+                                knowledgeBase
+                            )
+                        await pagination.push(documents)
+
+                        return pagination.getFormattedPage(
+                            options.page,
+                            options.limit
+                        )
+                    } else {
+                        // Show knowledge base stats
+                        const stats =
+                            await ctx.chatluna_knowledge.getKnowledgeBaseStats(
+                                knowledgeBase
+                            )
+                        const knowledgeBases =
+                            await ctx.chatluna_knowledge.listKnowledgeBases()
+                        const config = knowledgeBases.find(
+                            (kb) =>
+                                kb.id === knowledgeBase ||
+                                kb.name === knowledgeBase
+                        )
+
+                        if (!config) {
+                            return `错误: 知识库 "${knowledgeBase}" 不存在`
+                        }
+
+                        return `知识库信息：
+名称：${config.name}
+ID：${config.id}
+类型：${config.ragType}
+描述：${config.description || '无'}
+文档总数：${stats.totalDocuments}
+向量存储类型：${stats.vectorStoreType}
+最后更新：${stats.lastUpdated || '未知'}
+
+提示: 使用 --docs 参数查看文档列表`
+                    }
                 }
-            })
-
-            const documents = await ctx.chatluna_knowledge.listDocument(
-                options.db
-            )
-
-            await pagination.push(documents)
-
-            return pagination.getFormattedPage(options.page, options.limit)
+            } catch (error) {
+                logger.error(error)
+                return `查询失败：${error.message}`
+            }
         })
 }
 
-function formatDocumentInfo(document: DocumentConfig) {
-    return `${document.name} => ${document.path}`
+function formatKnowledgeBaseInfo(kb: DocumentConfig): string {
+    return `${kb.name} (${kb.ragType})
+   ID: ${kb.id}
+   描述: ${kb.description || '无'}
+   创建时间: ${kb.createdAt?.toLocaleString() || '未知'}`
 }
 
-async function deleteDocument(ctx: Context, filePath: string, db: string) {
-    await ctx.chatluna_knowledge.deleteDocument(filePath, db)
+function formatDocumentInfo(doc: Document): string {
+    const metadata = doc.metadata || {}
+    const preview =
+        doc.pageContent.substring(0, 100) +
+        (doc.pageContent.length > 100 ? '...' : '')
+
+    return `ID: ${metadata.id || '未知'}
+   来源: ${metadata.source || '未知'}
+   预览: ${preview}`
 }

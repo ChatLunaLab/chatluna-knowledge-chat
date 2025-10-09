@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//g/projects/koishi_projects/koishi-new/external/chatluna/packages/service-vector-store/src/service/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

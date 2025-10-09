@@ -1,6 +1,6 @@
 import { Context } from 'koishi'
 import { Document } from '@langchain/core/documents'
-import { Config } from '../..'
+import { Config } from 'koishi-plugin-chatluna-knowledge-chat'
 
 export abstract class DocumentLoader {
     constructor(

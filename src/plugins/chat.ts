@@ -1,142 +1,102 @@
-import { ChatChain } from 'koishi-plugin-chatluna/chains'
 import { Context } from 'koishi'
 import { Config, logger } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
-import type {} from 'koishi-plugin-chatluna/llm-core/memory/message'
-import { Chain } from '../llm-core/chains/type'
-import { DocumentConfig } from '../types'
-import { VectorStore } from '@langchain/core/vectorstores'
-import { MultiScoreThresholdRetriever } from '../llm-core/retrievers/multi_score_threshold'
-import { parseRawModelName } from 'koishi-plugin-chatluna/llm-core/utils/count_tokens'
-import { ChatLunaChatModel } from 'koishi-plugin-chatluna/llm-core/platform/model'
-import { ChatInterface } from 'koishi-plugin-chatluna/llm-core/chat/app'
-import {
-    ChatLunaError,
-    ChatLunaErrorCode
-} from 'koishi-plugin-chatluna/utils/error'
 
 export async function apply(
     ctx: Context,
     config: Config,
-    plugin: ChatLunaPlugin,
-    chain: ChatChain
+    plugin: ChatLunaPlugin
 ): Promise<void> {
-    const cache: Map<string, ReturnType<Chain>> = new Map()
+    const cache: Map<string, string> = new Map()
 
-    ctx.on(
-        'chatluna/before-chat',
-        async (
-            conversationId,
-            message,
-            promptVariables,
-            chatInterface,
-            chain
-        ) => {
+    ctx.before(
+        'chatluna/chat',
+        async (conversationId, message, promptVariables, chatInterface) => {
             if (chatInterface.chatMode === 'plugin') {
                 return undefined
             }
 
-            let searchChain: ReturnType<Chain> = cache.get(conversationId)
+            try {
+                // Get or create default knowledge base for this conversation
+                let knowledgeBaseId = cache.get(conversationId)
 
-            if (!searchChain) {
-                searchChain = await createSearchChain(
-                    ctx,
-                    config,
-                    chatInterface
-                )
+                if (!knowledgeBaseId) {
+                    knowledgeBaseId = await getDefaultKnowledgeBase(ctx, config)
 
-                if (!searchChain) {
-                    return
+                    if (!knowledgeBaseId) {
+                        logger.warn('No default knowledge base available')
+                        return
+                    }
+
+                    cache.set(conversationId, knowledgeBaseId)
                 }
 
-                cache.set(conversationId, searchChain)
+                // Perform similarity search
+                const documents = await ctx.chatluna_knowledge.similaritySearch(
+                    knowledgeBaseId,
+                    message.content as string,
+                    {
+                        k: config.topK || 5,
+                        threshold: config.minSimilarityScore || 0.75
+                    }
+                )
+
+                logger.debug(
+                    `Found ${documents.length} relevant documents for query: "${message.content}"`
+                )
+
+                if (documents.length > 0) {
+                    logger.debug(
+                        `Documents: ${documents.map((doc) => doc.pageContent.substring(0, 100)).join('\n\n')}`
+                    )
+                }
+
+                promptVariables['knowledge'] = documents
+            } catch (error) {
+                logger.error('Error during knowledge retrieval:', error)
+                // Continue without knowledge if retrieval fails
+                promptVariables['knowledge'] = []
             }
-
-            const documents = await searchChain(
-                message.content as string,
-                await chatInterface.chatHistory.getMessages()
-            )
-
-            logger.debug(
-                `Documents: ${documents.map((doc) => doc.pageContent).join('\n\n')}`
-            )
-
-            promptVariables['knowledge'] = documents
         }
     )
 
     ctx.on('chatluna/clear-chat-history', async () => {
         cache.clear()
-        ctx.chatluna_knowledge.clearVectorStore()
+        ctx.chatluna_knowledge.clearCache()
     })
 }
 
-async function createSearchChain(
+/**
+ * Get or create a default knowledge base
+ */
+async function getDefaultKnowledgeBase(
     ctx: Context,
-    config: Config,
-    chatInterface: ChatInterface
-): Promise<ReturnType<Chain>> {
-    const preset = await chatInterface.preset
-    const searchKnowledge = preset.knowledge?.knowledge
-    const chatVectorStore = ctx.chatluna.config.defaultVectorStore
-    const selectedKnowledge: DocumentConfig[] = []
+    config: Config
+): Promise<string | null> {
+    try {
+        // First try to find existing default knowledge base
+        const knowledgeBases = await ctx.chatluna_knowledge.listKnowledgeBases()
 
-    if (searchKnowledge) {
-        const regex =
-            typeof searchKnowledge === 'string'
-                ? searchKnowledge
-                : searchKnowledge.join('|')
-
-        const knowledge = await ctx.database.get('chathub_knowledge', {
-            name: {
-                $regex: new RegExp(regex)
-            },
-            vector_storage: chatVectorStore
-        })
-
-        selectedKnowledge.push(...knowledge)
-    } else {
-        const knowledge = await ctx.database.get('chathub_knowledge', {
-            name: config.defaultKnowledge
-        })
-
-        selectedKnowledge.push(...knowledge)
-    }
-
-    if (selectedKnowledge.length === 0) {
-        logger.warn('No knowledge selected')
-        return
-    } else {
-        logger.debug(`Selected knowledge: ${JSON.stringify(selectedKnowledge)}`)
-    }
-
-    const vectorStores = await Promise.all(
-        selectedKnowledge.map((knowledge) =>
-            ctx.chatluna_knowledge.loadVectorStore(knowledge.path)
+        // Look for a knowledge base with the default name
+        let defaultKB = knowledgeBases.find(
+            (kb) => kb.name === config.defaultKnowledge || kb.name === 'default'
         )
-    )
 
-    const retriever = createRetriever(config, vectorStores)
+        if (!defaultKB && knowledgeBases.length > 0) {
+            // Use the first available knowledge base if no default found
+            defaultKB = knowledgeBases[0]
+            logger.info(
+                `Using knowledge base: ${defaultKB.name} (${defaultKB.id})`
+            )
+        }
 
-    if (!config.model) {
-        throw new ChatLunaError(
-            ChatLunaErrorCode.KNOWLEDGE_CONFIG_INVALID,
-            new Error('model is not set')
-        )
+        if (!defaultKB) {
+            return null
+        }
+
+        return defaultKB.id
+    } catch (error) {
+        logger.error('Error getting default knowledge base:', error)
+        return null
     }
-
-    const [platform, modelName] = parseRawModelName(config?.model)
-
-    const model = await ctx.chatluna
-        .createChatModel(platform, modelName)
-        .then((model) => model as ChatLunaChatModel)
-
-    return ctx.chatluna_knowledge.chains[config.mode](model, retriever)
-}
-
-function createRetriever(config: Config, vectorStores: VectorStore[]) {
-    return MultiScoreThresholdRetriever.fromVectorStores(vectorStores, {
-        minSimilarityScore: config.minSimilarityScore,
-        maxK: config.topK
-    })
 }

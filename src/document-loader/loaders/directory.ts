@@ -1,7 +1,7 @@
 import { Document } from '@langchain/core/documents'
 import { DocumentLoader, DocumentLoaderFields } from '../types'
 import fs from 'fs/promises'
-import { logger } from '../../..'
+import { logger } from 'koishi-plugin-chatluna-knowledge-chat'
 import path from 'path'
 
 export default class DirectoryLoader extends DocumentLoader {
