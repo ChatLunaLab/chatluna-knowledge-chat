@@ -7,6 +7,7 @@ import { apply as applyCommand } from './plugins/command'
 import { apply as applyConfig } from './plugins/config'
 import { apply as applyChat } from './plugins/chat'
 import { apply as applyTools } from './plugins/tools'
+import { apply as applyPromptVariable } from './plugins/prompt_variable'
 
 export async function plugins(
     ctx: Context,
@@ -24,7 +25,7 @@ export async function plugins(
 
     const plugins: Plugin[] =
         // plugin start
-        [applyCommand, applyConfig, applyChat, applyTools] // plugin end
+        [applyCommand, applyConfig, applyChat, applyTools, applyPromptVariable] // plugin end
 
     for (const apply of plugins) {
         await apply(ctx, config, plugin, chain)
