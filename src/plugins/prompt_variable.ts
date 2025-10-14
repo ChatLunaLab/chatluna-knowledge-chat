@@ -2,6 +2,7 @@
 import { Context } from 'koishi'
 import { Config, logger } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
+import { getMessageContent } from 'koishi-plugin-chatluna/utils/string'
 
 export async function apply(
     ctx: Context,
@@ -31,7 +32,11 @@ export async function apply(
             }
 
             // Get the search query from the prompt content
-            const searchContent: string = (variables['prompt'] as string) || ''
+            let searchContent: string = variables['prompt'] as string
+
+            if (Array.isArray(variables['prompt'])) {
+                searchContent = getMessageContent(variables['prompt'])
+            }
 
             if (!searchContent || searchContent.trim().length === 0) {
                 logger.debug(

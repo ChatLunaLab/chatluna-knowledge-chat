@@ -19,7 +19,7 @@ export async function apply(
         .option(
             'type',
             '-t --type <type:string> RAG类型 (standard/hippo_rag/light_rag)',
-            { fallback: 'standard' }
+            { fallback: config.defaultRagType }
         )
         .option('description', '-d <desc:string> 知识库描述')
         .option('embeddings', '-e <embeddings:string> 嵌入模型')

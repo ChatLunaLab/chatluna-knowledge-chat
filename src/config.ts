@@ -3,6 +3,7 @@ import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 
 export interface Config extends ChatLunaPlugin.Config {
     defaultKnowledge: string
+    defaultRagType: 'standard' | 'hippo_rag' | 'light_rag'
     chunkSize: number
     standardModel: string
     topK: number
@@ -37,6 +38,13 @@ export const Config = Schema.intersect([
         defaultKnowledge: Schema.dynamic('knowledge')
             .description('默认的知识库 ID')
             .default('无'),
+        defaultRagType: Schema.union([
+            Schema.const('standard').description('标准 RAG'),
+            Schema.const('hippo_rag').description('HippoRAG'),
+            Schema.const('light_rag').description('LightRAG')
+        ])
+            .default('standard')
+            .description('默认使用的 RAG 引擎类型'),
 
         chunkSize: Schema.number()
             .default(500)
@@ -78,11 +86,11 @@ export const Config = Schema.intersect([
         standardModel:
             Schema.dynamic('model').description('运行标准知识库的模型'),
         standardMode: Schema.union([
-            Schema.const('default').description('直接对问题查询'),
+            Schema.const('fast').description('直接对问题查询'),
             Schema.const('regenerate').description('重新生成问题查询'),
             Schema.const('contextual-compression').description('上下文压缩查询')
         ])
-            .default('default')
+            .default('fast')
             .description('标准知识库的运行模式')
     }).description('标准知识库配置'),
 

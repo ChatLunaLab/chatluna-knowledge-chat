@@ -10,7 +10,7 @@ export async function apply(
     config: Config,
     plugin: ChatLunaPlugin
 ): Promise<void> {
-    plugin.registerTool('knowledge-search', {
+    plugin.registerTool('knowledge_search', {
         selector() {
             return true
         },

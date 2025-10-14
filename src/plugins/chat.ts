@@ -1,6 +1,7 @@
 import { Context } from 'koishi'
 import { Config, logger } from '..'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
+import { getMessageContent } from 'koishi-plugin-chatluna/utils/string'
 
 export async function apply(
     ctx: Context,
@@ -12,10 +13,6 @@ export async function apply(
     ctx.before(
         'chatluna/chat',
         async (conversationId, message, promptVariables, chatInterface) => {
-            if (chatInterface.chatMode === 'plugin') {
-                return undefined
-            }
-
             try {
                 // Get or create default knowledge base for this conversation
                 let knowledgeBaseId = cache.get(conversationId)
@@ -31,14 +28,16 @@ export async function apply(
                     cache.set(conversationId, knowledgeBaseId)
                 }
 
+                const options = {
+                    k: config.topK || 5,
+                    threshold: config.minSimilarityScore ?? 0.75
+                }
+
                 // Perform similarity search
                 const documents = await ctx.chatluna_knowledge.similaritySearch(
                     knowledgeBaseId,
-                    message.content as string,
-                    {
-                        k: config.topK || 5,
-                        threshold: config.minSimilarityScore || 0.75
-                    }
+                    getMessageContent(message.content),
+                    options
                 )
 
                 logger.debug(
