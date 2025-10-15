@@ -2,6 +2,7 @@ import { Schema } from 'koishi'
 import { ChatLunaPlugin } from 'koishi-plugin-chatluna/services/chat'
 
 export interface Config extends ChatLunaPlugin.Config {
+    enableChatIntegration: boolean
     defaultKnowledge: string
     defaultRagType: 'standard' | 'hippo_rag' | 'light_rag'
     chunkSize: number
@@ -35,6 +36,9 @@ export interface Config extends ChatLunaPlugin.Config {
 
 export const Config = Schema.intersect([
     Schema.object({
+        enableChatIntegration: Schema.boolean()
+            .default(true)
+            .description('是否将知识库注入到主插件的房间聊天中'),
         defaultKnowledge: Schema.dynamic('knowledge')
             .description('默认的知识库 ID')
             .default('无'),

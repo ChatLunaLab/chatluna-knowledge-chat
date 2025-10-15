@@ -8,6 +8,10 @@ export async function apply(
     config: Config,
     plugin: ChatLunaPlugin
 ): Promise<void> {
+    if (!config.enableChatIntegration) {
+        return
+    }
+
     const cache: Map<string, string> = new Map()
 
     ctx.before(
@@ -46,7 +50,10 @@ export async function apply(
 
                 if (documents.length > 0) {
                     logger.debug(
-                        `Documents: ${documents.map((doc) => doc.pageContent.substring(0, 100)).join('\n\n')}`
+                        `Documents: ${documents
+                            .map((doc) => doc.pageContent.substring(0, 100))
+                            .join('\n\n')
+                            .substring(0, 100)}`
                     )
                 }
 
