@@ -113,7 +113,13 @@ export async function apply(
         })
 
     // Delete knowledge base or documents
-    ctx.command('chatluna.knowledge.delete <target:string>', '删除知识库或文档')
+    ctx.command(
+        'chatluna.knowledge.delete <target:string>',
+        '删除知识库或文档',
+        {
+            authority: 3
+        }
+    )
         .option('kb', '-k 删除整个知识库')
         .option('docs', '-d <docs:string> 删除指定文档ID（逗号分隔）')
         .action(async ({ options, session }, target) => {
@@ -261,7 +267,8 @@ ID：${config.id}
 }
 
 function formatKnowledgeBaseInfo(kb: DocumentConfig): string {
-    return `${kb.name} (${kb.ragType})
+    return `${kb.name}
+   类型：(${kb.ragType})
    ID: ${kb.id}
    描述: ${kb.description || '无'}
    创建时间: ${kb.createdAt?.toLocaleString() || '未知'}`

@@ -48,7 +48,9 @@ export const Config = Schema.intersect([
             Schema.const('light_rag').description('LightRAG')
         ])
             .default('standard')
-            .description('默认使用的 RAG 引擎类型'),
+            .description(
+                '默认使用的 RAG 引擎类型。注意此项只**针对新创建的知识库**，具体的知识库类型请使用列出知识库指令。'
+            ),
 
         chunkSize: Schema.number()
             .default(500)
