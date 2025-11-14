@@ -201,12 +201,15 @@ export async function downloadHttpFile(
     return await downloadFile(session, h('file', { src: url }))
 }
 
-async function validateAndResolvePath(filePath: string): Promise<string> {
+async function validateAndResolvePath(
+    ctx: Context,
+    filePath: string
+): Promise<string> {
     try {
         await fs.access(filePath)
         return filePath
     } catch {
-        const resolvedPath = path.resolve(process.cwd(), filePath)
+        const resolvedPath = path.join(ctx.baseDir, filePath)
         try {
             await fs.access(resolvedPath)
             return resolvedPath
@@ -239,7 +242,10 @@ async function addFilePathIfValid(
         allFilePaths.push(downloadedPath)
         await session.send(`${messagePrefix}：${formattedPath}`)
     } else {
-        const validatedPath = await validateAndResolvePath(formattedPath)
+        const validatedPath = await validateAndResolvePath(
+            session.app,
+            formattedPath
+        )
         allFilePaths.push(validatedPath)
         await session.send(`${messagePrefix}：${formattedPath}`)
     }
