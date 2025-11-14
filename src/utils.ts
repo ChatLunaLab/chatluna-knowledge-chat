@@ -201,6 +201,50 @@ export async function downloadHttpFile(
     return await downloadFile(session, h('file', { src: url }))
 }
 
+async function validateAndResolvePath(filePath: string): Promise<string> {
+    try {
+        await fs.access(filePath)
+        return filePath
+    } catch {
+        const resolvedPath = path.resolve(process.cwd(), filePath)
+        try {
+            await fs.access(resolvedPath)
+            return resolvedPath
+        } catch {
+            throw new Error(`文件或文件夹不存在：${filePath}`)
+        }
+    }
+}
+
+async function addFilePathIfValid(
+    session: Session,
+    loader: DefaultDocumentLoader,
+    formattedPath: string,
+    allFilePaths: string[],
+    messagePrefix: string
+): Promise<void> {
+    const supported = await loader.support(formattedPath)
+    if (!supported) {
+        throw new Error(`不支持的文件类型：${formattedPath}`)
+    }
+
+    if (
+        formattedPath.startsWith('http://') ||
+        formattedPath.startsWith('https://')
+    ) {
+        const downloadedPath = await downloadFile(
+            session,
+            h('file', { src: formattedPath })
+        )
+        allFilePaths.push(downloadedPath)
+        await session.send(`${messagePrefix}：${formattedPath}`)
+    } else {
+        const validatedPath = await validateAndResolvePath(formattedPath)
+        allFilePaths.push(validatedPath)
+        await session.send(`${messagePrefix}：${formattedPath}`)
+    }
+}
+
 export async function collectFiles(
     session: Session,
     loader: DefaultDocumentLoader,
@@ -210,25 +254,13 @@ export async function collectFiles(
 
     if (initialPath && typeof initialPath === 'string') {
         const formattedPath = formatFilePath(initialPath)
-        const supported = await loader.support(formattedPath)
-        if (!supported) {
-            throw new Error(`不支持的文件类型：${formattedPath}`)
-        }
-
-        if (
-            formattedPath.startsWith('http://') ||
-            formattedPath.startsWith('https://')
-        ) {
-            const downloadedPath = await downloadFile(
-                session,
-                h('file', { src: formattedPath })
-            )
-            allFilePaths.push(downloadedPath)
-            await session.send(`已下载初始文件：${formattedPath}`)
-        } else {
-            allFilePaths.push(formattedPath)
-            await session.send(`已添加初始文件：${formattedPath}`)
-        }
+        await addFilePathIfValid(
+            session,
+            loader,
+            formattedPath,
+            allFilePaths,
+            '已下载初始文件'
+        )
     }
 
     await session.send(
@@ -316,27 +348,18 @@ async function processTextInput(
     }
 
     const formattedPath = formatFilePath(text)
-    const supported = await loader.support(formattedPath)
-    if (!supported) {
-        await session.send(`不支持的文件类型：${formattedPath}`)
-        return
-    }
 
     try {
-        if (
+        await addFilePathIfValid(
+            session,
+            loader,
+            formattedPath,
+            allFilePaths,
             formattedPath.startsWith('http://') ||
-            formattedPath.startsWith('https://')
-        ) {
-            const downloadedPath = await downloadHttpFile(
-                session,
-                formattedPath
-            )
-            allFilePaths.push(downloadedPath)
-            await session.send(`已下载文件：${formattedPath}`)
-        } else {
-            allFilePaths.push(formattedPath)
-            await session.send(`已添加文件路径：${formattedPath}`)
-        }
+                formattedPath.startsWith('https://')
+                ? '已下载文件'
+                : '已添加文件路径'
+        )
     } catch (error) {
         await session.send(`处理文件失败：${formattedPath} - ${error.message}`)
     }

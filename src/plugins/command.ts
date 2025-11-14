@@ -7,6 +7,8 @@ import { Document } from '@langchain/core/documents'
 import { RAGRetrieverType } from 'koishi-plugin-chatluna-vector-store-service'
 import { processAndUploadDocuments } from '../utils'
 
+let defaultKnowledgeBaseCounter = 1
+
 export async function apply(
     ctx: Context,
     config: Config,
@@ -28,9 +30,12 @@ export async function apply(
         .option('overlap', '-o <overlap:number> 切块重叠大小')
         .option('chunkType', '-c <chunk-type:string> 分割使用的方法')
         .action(async ({ options, session }, name) => {
-            console.log(options)
+            let knowledgeBaseId: string | undefined
             try {
-                // Validate RAG type
+                if (!name || name.trim() === '') {
+                    name = `default_${defaultKnowledgeBaseCounter++}`
+                }
+
                 const validTypes: RAGRetrieverType[] = [
                     'standard',
                     'hippo_rag',
@@ -40,8 +45,7 @@ export async function apply(
                     return `不支持的RAG类型：${options.type}。支持的类型有：${validTypes.join(', ')}`
                 }
 
-                // Create knowledge base
-                const knowledgeBaseId =
+                knowledgeBaseId =
                     await ctx.chatluna_knowledge.createKnowledgeBase(
                         name,
                         options.type as RAGRetrieverType,
@@ -55,7 +59,6 @@ export async function apply(
                     `已创建知识库 "${name}" (ID: ${knowledgeBaseId})`
                 )
 
-                // Upload documents using unified function
                 const uploadResult = await processAndUploadDocuments(
                     ctx,
                     session,
@@ -68,9 +71,30 @@ export async function apply(
                     }
                 )
 
+                if (
+                    uploadResult.includes('没有找到有效的文件') ||
+                    uploadResult.includes('上传失败')
+                ) {
+                    await ctx.chatluna_knowledge.deleteKnowledgeBase(
+                        knowledgeBaseId
+                    )
+                    return `${uploadResult}\n已自动删除知识库 "${name}"`
+                }
+
                 return uploadResult
             } catch (error) {
                 logger.error(error)
+                if (knowledgeBaseId) {
+                    try {
+                        await ctx.chatluna_knowledge.deleteKnowledgeBase(
+                            knowledgeBaseId
+                        )
+                        return `创建知识库失败：${error.message}\n已自动删除失败的知识库`
+                    } catch (deleteError) {
+                        logger.error(deleteError)
+                        return `创建知识库失败：${error.message}\n删除失败的知识库时出错：${deleteError.message}`
+                    }
+                }
                 return `创建知识库失败：${error.message}`
             }
         })
